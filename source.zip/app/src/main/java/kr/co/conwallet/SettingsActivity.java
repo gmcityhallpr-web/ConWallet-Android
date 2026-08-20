@@ -96,12 +96,20 @@ public class SettingsActivity extends Activity {
         backup.addView(backupButtons);
         addCard(root, backup);
 
-        LinearLayout data = card("데이터 관리", "필요할 때만 사용하세요. 삭제한 데이터는 되돌릴 수 없습니다.");
+        LinearLayout data = card("데이터 관리", "삭제한 기프티콘은 30일 동안 휴지통에서 복구할 수 있어요.");
+        Button trash = new Button(this);
+        trash.setText("휴지통 보기");
+        Ui.styleSecondaryButton(trash, this);
+        trash.setOnClickListener(v -> startActivity(new Intent(this, TrashActivity.class)));
+        data.addView(trash);
+
         Button deleteAll = new Button(this);
-        deleteAll.setText("모든 기프티콘 삭제");
+        deleteAll.setText("모든 기프티콘 완전 삭제");
         Ui.styleDangerButton(deleteAll, this);
+        LinearLayout.LayoutParams deleteLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        deleteLp.topMargin = Ui.dp(this, 8);
+        data.addView(deleteAll, deleteLp);
         deleteAll.setOnClickListener(v -> confirmDeleteAll());
-        data.addView(deleteAll);
         addCard(root, data);
         return scroll;
     }
@@ -196,13 +204,14 @@ public class SettingsActivity extends Activity {
     private void confirmDeleteAll() {
         new AlertDialog.Builder(this)
                 .setTitle("모든 데이터 삭제")
-                .setMessage("저장된 모든 기프티콘과 이미지를 삭제합니다. 되돌릴 수 없습니다.")
+                .setMessage("저장된 모든 기프티콘과 이미지를 완전히 삭제합니다. 되돌릴 수 없습니다.")
                 .setNegativeButton("취소", null)
                 .setPositiveButton("모두 삭제", (d, w) -> {
                     for (Gifticon g : GifticonDb.get(this).all()) {
                         NotificationHelper.cancel(this, g.id);
                         ImageStore.delete(g.imagePath);
                     }
+                    for (Gifticon g : GifticonDb.get(this).trash()) ImageStore.delete(g.imagePath);
                     GifticonDb.get(this).deleteAll();
                     Toast.makeText(this, "모두 삭제했습니다.", Toast.LENGTH_SHORT).show();
                 }).show();
