@@ -110,13 +110,23 @@ public class MainActivity extends Activity {
         ));
         header.addView(brandMark, new LinearLayout.LayoutParams(Ui.dp(this, 42), Ui.dp(this, 42)));
 
+        LinearLayout titleCol = new LinearLayout(this);
+        titleCol.setOrientation(LinearLayout.VERTICAL);
+        titleCol.setGravity(Gravity.CENTER_VERTICAL);
+
         TextView title = Ui.text(this, "디지털폐지수집", 23, Ui.colorText());
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         title.setSingleLine(true);
+        titleCol.addView(title);
+
+        TextView revision = Ui.text(this, "2026.08.20 수정 · v1.2", 11, Ui.colorSecondary());
+        revision.setPadding(0, Ui.dp(this, 2), 0, 0);
+        titleCol.addView(revision);
+
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
         titleLp.leftMargin = Ui.dp(this, 11);
         titleLp.rightMargin = Ui.dp(this, 8);
-        header.addView(title, titleLp);
+        header.addView(titleCol, titleLp);
 
         FrameLayout settings = topIconButton(R.drawable.ic_settings_sleek, false, "설정");
         settings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
@@ -330,7 +340,7 @@ public class MainActivity extends Activity {
                     d.dismiss();
                     reload();
                     if (sortIndex == 2) {
-                        Toast.makeText(this, "사용 가능 탭에서 항목을 길게 눌러 순서를 바꿀 수 있어요.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "사용 가능 탭에서 왼쪽 이동 핸들을 길게 눌러 순서를 바꿀 수 있어요.", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .show();
