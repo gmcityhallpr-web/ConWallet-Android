@@ -10,7 +10,7 @@ import java.util.List;
 
 public class GifticonDb extends SQLiteOpenHelper {
     private static final String DB_NAME = "conwallet.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
     private static GifticonDb instance;
 
     public static synchronized GifticonDb get(Context c) {
@@ -34,12 +34,19 @@ public class GifticonDb extends SQLiteOpenHelper {
                 "notifications_enabled INTEGER NOT NULL DEFAULT 1," +
                 "barcode_payload TEXT," +
                 "barcode_symbology TEXT," +
-                "image_path TEXT" +
+                "image_path TEXT," +
+                "deleted_at INTEGER" +
                 ")");
         db.execSQL("CREATE INDEX idx_gifticons_created ON gifticons(created_at DESC)");
+        db.execSQL("CREATE INDEX idx_gifticons_barcode ON gifticons(barcode_payload)");
     }
 
-    @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
+    @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE gifticons ADD COLUMN deleted_at INTEGER");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_gifticons_barcode ON gifticons(barcode_payload)");
+        }
+    }
 
     public void save(Gifticon g) {
         ContentValues v = values(g);
@@ -52,12 +59,46 @@ public class GifticonDb extends SQLiteOpenHelper {
         finally { c.close(); }
     }
 
+    public Gifticon findActiveByBarcode(String barcode, String exceptId) {
+        if (barcode == null || barcode.trim().isEmpty()) return null;
+        String sel = "barcode_payload=? AND deleted_at IS NULL";
+        List<String> args = new ArrayList<>();
+        args.add(barcode.trim());
+        if (exceptId != null) {
+            sel += " AND id<>?";
+            args.add(exceptId);
+        }
+        Cursor c = getReadableDatabase().query("gifticons", null, sel, args.toArray(new String[0]), null, null, null, "1");
+        try { return c.moveToFirst() ? from(c) : null; }
+        finally { c.close(); }
+    }
+
     public List<Gifticon> all() {
+        return queryList("deleted_at IS NULL", null, "created_at DESC");
+    }
+
+    public List<Gifticon> trash() {
+        return queryList("deleted_at IS NOT NULL", null, "deleted_at DESC");
+    }
+
+    private List<Gifticon> queryList(String selection, String[] args, String order) {
         List<Gifticon> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query("gifticons", null, null, null, null, null, "created_at DESC");
+        Cursor c = getReadableDatabase().query("gifticons", null, selection, args, null, null, order);
         try { while (c.moveToNext()) list.add(from(c)); }
         finally { c.close(); }
         return list;
+    }
+
+    public void moveToTrash(String id) {
+        ContentValues v = new ContentValues();
+        v.put("deleted_at", System.currentTimeMillis());
+        getWritableDatabase().update("gifticons", v, "id=?", new String[]{id});
+    }
+
+    public void restore(String id) {
+        ContentValues v = new ContentValues();
+        v.putNull("deleted_at");
+        getWritableDatabase().update("gifticons", v, "id=?", new String[]{id});
     }
 
     public void delete(String id) {
@@ -65,6 +106,15 @@ public class GifticonDb extends SQLiteOpenHelper {
     }
 
     public void deleteAll() { getWritableDatabase().delete("gifticons", null, null); }
+
+    public void purgeTrashOlderThan(long cutoff) {
+        for (Gifticon g : trash()) {
+            if (g.deletedAt != null && g.deletedAt < cutoff) {
+                ImageStore.delete(g.imagePath);
+                delete(g.id);
+            }
+        }
+    }
 
     private static ContentValues values(Gifticon g) {
         ContentValues v = new ContentValues();
@@ -76,6 +126,7 @@ public class GifticonDb extends SQLiteOpenHelper {
         if (g.barcodePayload == null) v.putNull("barcode_payload"); else v.put("barcode_payload", g.barcodePayload);
         if (g.barcodeSymbology == null) v.putNull("barcode_symbology"); else v.put("barcode_symbology", g.barcodeSymbology);
         if (g.imagePath == null) v.putNull("image_path"); else v.put("image_path", g.imagePath);
+        if (g.deletedAt == null) v.putNull("deleted_at"); else v.put("deleted_at", g.deletedAt);
         return v;
     }
 
@@ -94,6 +145,7 @@ public class GifticonDb extends SQLiteOpenHelper {
         i = c.getColumnIndexOrThrow("barcode_payload"); g.barcodePayload = c.isNull(i) ? null : c.getString(i);
         i = c.getColumnIndexOrThrow("barcode_symbology"); g.barcodeSymbology = c.isNull(i) ? null : c.getString(i);
         i = c.getColumnIndexOrThrow("image_path"); g.imagePath = c.isNull(i) ? null : c.getString(i);
+        i = c.getColumnIndex("deleted_at"); g.deletedAt = i < 0 || c.isNull(i) ? null : c.getLong(i);
         return g;
     }
 }
