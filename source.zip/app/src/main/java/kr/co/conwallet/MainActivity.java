@@ -49,30 +49,48 @@ public class MainActivity extends Activity {
     private View buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 8));
+        root.setPadding(Ui.dp(this, 18), Ui.dp(this, 24), Ui.dp(this, 18), Ui.dp(this, 8));
         root.setBackgroundColor(Ui.colorBg());
 
+        // Apple의 inset grouped UI처럼 상단을 하나의 부드러운 카드로 묶고,
+        // 텍스트 버튼 대신 아이콘 버튼을 사용해 시각적인 밀도를 낮춥니다.
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout heading = new LinearLayout(this);
-        heading.setOrientation(LinearLayout.VERTICAL);
-        TextView title = Ui.text(this, "디지털폐지수집", 30, Ui.colorText());
-        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        TextView subtitle = Ui.text(this, "기프티콘, 잊기 전에 챙겨요", 13, Ui.colorSecondary());
-        LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        subLp.topMargin = Ui.dp(this, 3);
-        heading.addView(title);
-        heading.addView(subtitle, subLp);
-        header.addView(heading, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        header.setPadding(Ui.dp(this, 13), Ui.dp(this, 12), Ui.dp(this, 11), Ui.dp(this, 12));
+        header.setBackground(Ui.rounded(Color.WHITE, 24, this));
+        header.setElevation(Ui.dp(this, 2));
 
-        TextView settings = Ui.actionButton(this, "설정", false);
+        FrameLayout brandMark = new FrameLayout(this);
+        brandMark.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 15, this));
+        brandMark.setClipToOutline(true);
+        ImageView brandImage = new ImageView(this);
+        brandImage.setImageResource(R.drawable.wook_launcher);
+        brandImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        brandMark.addView(brandImage, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+        ));
+        header.addView(brandMark, new LinearLayout.LayoutParams(Ui.dp(this, 42), Ui.dp(this, 42)));
+
+        TextView title = Ui.text(this, "디지털폐지수집", 23, Ui.colorText());
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        title.setSingleLine(true);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        titleLp.leftMargin = Ui.dp(this, 11);
+        titleLp.rightMargin = Ui.dp(this, 8);
+        header.addView(title, titleLp);
+
+        FrameLayout settings = topIconButton(R.drawable.ic_settings_sleek, false, "설정");
         settings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
-        LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        settingsLp.rightMargin = Ui.dp(this, 8);
+        LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(Ui.dp(this, 42), Ui.dp(this, 42));
+        settingsLp.rightMargin = Ui.dp(this, 7);
         header.addView(settings, settingsLp);
-        TextView add = Ui.actionButton(this, "＋ 추가", true);
+
+        FrameLayout add = topIconButton(R.drawable.ic_add_sleek, true, "기프티콘 추가");
         add.setOnClickListener(v -> startActivity(new Intent(this, AddEditGifticonActivity.class)));
-        header.addView(add);
+        header.addView(add, new LinearLayout.LayoutParams(Ui.dp(this, 42), Ui.dp(this, 42)));
+
         root.addView(header);
 
         LinearLayout stats = new LinearLayout(this);
@@ -86,7 +104,7 @@ public class MainActivity extends Activity {
         stats.addView(statCell("7일 이내", statSoon), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         stats.addView(statCell("전체", statTotal), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         LinearLayout.LayoutParams statsLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        statsLp.topMargin = Ui.dp(this, 18);
+        statsLp.topMargin = Ui.dp(this, 14);
         root.addView(stats, statsLp);
 
         LinearLayout searchRow = new LinearLayout(this);
@@ -205,6 +223,21 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, GifticonDetailActivity.class).putExtra("id", g.id));
         });
         return root;
+    }
+
+    private FrameLayout topIconButton(int iconRes, boolean primary, String description) {
+        FrameLayout button = new FrameLayout(this);
+        button.setBackground(Ui.rounded(primary ? Ui.colorBrand() : Ui.colorNeutralSoft(), 999, this));
+        button.setClickable(true);
+        button.setFocusable(true);
+        button.setContentDescription(description);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconRes);
+        icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        int size = Ui.dp(this, primary ? 20 : 19);
+        button.addView(icon, new FrameLayout.LayoutParams(size, size, Gravity.CENTER));
+        return button;
     }
 
     private LinearLayout statCell(String label, TextView value) {
