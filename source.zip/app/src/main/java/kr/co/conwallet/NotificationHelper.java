@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import java.util.Calendar;
-import java.util.List;
 
 public final class NotificationHelper {
     public static final String CHANNEL_ID = "gifticon_expiry";
@@ -21,8 +20,8 @@ public final class NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel ch = new NotificationChannel(
-                    CHANNEL_ID, "기프티콘 만료 알림", NotificationManager.IMPORTANCE_DEFAULT);
-            ch.setDescription("기프티콘 유효기간이 가까워지면 알려줍니다.");
+                    CHANNEL_ID, "욱지갑 만료 알림", NotificationManager.IMPORTANCE_DEFAULT);
+            ch.setDescription("욱지갑에 저장한 기프티콘의 유효기간이 가까워지면 알려줍니다.");
             nm.createNotificationChannel(ch);
         }
     }
@@ -32,8 +31,9 @@ public final class NotificationHelper {
     }
 
     public static void schedule(Context c, Gifticon g) {
+        if (g == null) return;
         cancel(c, g.id);
-        if (g == null || g.isUsed || !g.notificationsEnabled || g.expiryDate == null) return;
+        if (g.isUsed || !g.notificationsEnabled || g.expiryDate == null) return;
         for (Integer offset : NotificationPrefs.enabledOffsets(c)) {
             long when = notificationTime(g.expiryDate, offset);
             if (when <= System.currentTimeMillis()) continue;
@@ -43,7 +43,6 @@ public final class NotificationHelper {
                     .putExtra(EXTRA_OFFSET, offset);
             PendingIntent pi = PendingIntent.getBroadcast(c, requestCode(g.id, offset), intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            // 정확 알람 권한 없이도 동작하도록 inexact alarm 사용. 배터리 정책에 따라 조금 늦어질 수 있습니다.
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
         }
     }
