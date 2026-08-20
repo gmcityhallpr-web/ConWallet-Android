@@ -3,11 +3,13 @@ package kr.co.conwallet;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -16,14 +18,53 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GifticonAdapter extends BaseAdapter {
+    public interface DeleteListener {
+        void onDelete(Gifticon gifticon);
+    }
+
     private final Context context;
     private final List<Gifticon> items = new ArrayList<>();
+    private DeleteListener deleteListener;
+    private String openSwipeId;
+    private String draggedId;
 
     public GifticonAdapter(Context context) { this.context = context; }
 
     public void setItems(List<Gifticon> list) {
         items.clear();
         if (list != null) items.addAll(list);
+        notifyDataSetChanged();
+    }
+
+    public void setDeleteListener(DeleteListener listener) {
+        deleteListener = listener;
+    }
+
+    public int getDeleteWidthPx() {
+        return Ui.dp(context, 84);
+    }
+
+    public View getForeground(View row) {
+        Object tag = row == null ? null : row.getTag();
+        return tag instanceof Row ? ((Row) tag).foreground : row;
+    }
+
+    public String getOpenSwipeId() {
+        return openSwipeId;
+    }
+
+    public void rememberOpenSwipeId(String id) {
+        openSwipeId = id;
+    }
+
+    public void closeOpenSwipe() {
+        if (openSwipeId == null) return;
+        openSwipeId = null;
+        notifyDataSetChanged();
+    }
+
+    public void setDraggedId(String id) {
+        draggedId = id;
         notifyDataSetChanged();
     }
 
@@ -34,22 +75,41 @@ public class GifticonAdapter extends BaseAdapter {
     @Override public View getView(int position, View convertView, ViewGroup parent) {
         Row h;
         if (convertView == null) {
-            LinearLayout root = new LinearLayout(context);
-            root.setOrientation(LinearLayout.HORIZONTAL);
-            root.setGravity(Gravity.CENTER_VERTICAL);
-            root.setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 14), Ui.dp(context, 12));
-            Ui.card(root, context);
+            FrameLayout root = new FrameLayout(context);
+
+            TextView delete = Ui.text(context, "삭제", 14, Color.WHITE);
+            delete.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            delete.setGravity(Gravity.CENTER);
+            delete.setClickable(true);
+            delete.setFocusable(true);
+            delete.setBackground(Ui.rounded(Ui.colorDanger(), 18, context));
+            FrameLayout.LayoutParams deleteLp = new FrameLayout.LayoutParams(
+                    getDeleteWidthPx(),
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    Gravity.END
+            );
+            root.addView(delete, deleteLp);
+
+            LinearLayout foreground = new LinearLayout(context);
+            foreground.setOrientation(LinearLayout.HORIZONTAL);
+            foreground.setGravity(Gravity.CENTER_VERTICAL);
+            foreground.setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 14), Ui.dp(context, 12));
+            Ui.card(foreground, context);
+            root.addView(foreground, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+            ));
 
             ImageView image = new ImageView(context);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
             image.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 14, context));
             image.setClipToOutline(true);
-            root.addView(image, new LinearLayout.LayoutParams(Ui.dp(context, 82), Ui.dp(context, 82)));
+            foreground.addView(image, new LinearLayout.LayoutParams(Ui.dp(context, 82), Ui.dp(context, 82)));
 
             LinearLayout textCol = new LinearLayout(context);
             textCol.setOrientation(LinearLayout.VERTICAL);
             textCol.setPadding(Ui.dp(context, 13), 0, 0, 0);
-            root.addView(textCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            foreground.addView(textCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
             LinearLayout meta = new LinearLayout(context);
             meta.setGravity(Gravity.CENTER_VERTICAL);
@@ -73,7 +133,7 @@ public class GifticonAdapter extends BaseAdapter {
             textCol.addView(title);
             textCol.addView(expiry);
 
-            h = new Row(root, image, brand, title, expiry, status);
+            h = new Row(root, foreground, delete, image, brand, title, expiry, status);
             root.setTag(h);
             convertView = root;
         } else {
@@ -81,7 +141,13 @@ public class GifticonAdapter extends BaseAdapter {
         }
 
         Gifticon g = getItem(position);
-        h.root.setAlpha(g.isUsed ? 0.62f : 1f);
+        boolean isDragged = g.id != null && g.id.equals(draggedId);
+        h.foreground.setAlpha(isDragged ? 0.14f : (g.isUsed ? 0.62f : 1f));
+        h.foreground.setTranslationX(g.id != null && g.id.equals(openSwipeId) ? -getDeleteWidthPx() : 0f);
+        h.delete.setOnClickListener(v -> {
+            if (deleteListener != null) deleteListener.onDelete(g);
+        });
+
         h.brand.setText(g.brand == null || g.brand.isEmpty() ? "기프티콘" : g.brand);
         h.title.setText(g.title == null || g.title.trim().isEmpty() ? "이름 없는 기프티콘" : g.title);
         h.expiry.setText(g.expiryDate == null ? "유효기간 없음" : "유효기간 · " + DateUtil.shortDate(g.expiryDate));
@@ -119,11 +185,20 @@ public class GifticonAdapter extends BaseAdapter {
     }
 
     private static class Row {
-        final LinearLayout root;
+        final FrameLayout root;
+        final LinearLayout foreground;
+        final TextView delete;
         final ImageView image;
         final TextView brand, title, expiry, status;
-        Row(LinearLayout r, ImageView i, TextView b, TextView t, TextView e, TextView s) {
-            root = r; image = i; brand = b; title = t; expiry = e; status = s;
+        Row(FrameLayout r, LinearLayout f, TextView d, ImageView i, TextView b, TextView t, TextView e, TextView s) {
+            root = r;
+            foreground = f;
+            delete = d;
+            image = i;
+            brand = b;
+            title = t;
+            expiry = e;
+            status = s;
         }
     }
 }
