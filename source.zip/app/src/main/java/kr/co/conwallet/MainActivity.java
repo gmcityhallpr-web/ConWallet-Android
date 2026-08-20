@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout heading = new LinearLayout(this);
         heading.setOrientation(LinearLayout.VERTICAL);
-        TextView title = Ui.text(this, "욱지갑", 30, Ui.colorText());
+        TextView title = Ui.text(this, "디지털폐지모으기", 30, Ui.colorText());
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         TextView subtitle = Ui.text(this, "기프티콘, 잊기 전에 챙겨요", 13, Ui.colorSecondary());
         LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
