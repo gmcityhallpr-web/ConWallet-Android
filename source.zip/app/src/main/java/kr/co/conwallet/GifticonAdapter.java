@@ -1,11 +1,16 @@
 package kr.co.conwallet;
 
+import android.content.ClipData;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.Build;
+import android.view.DragEvent;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -15,12 +20,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GifticonAdapter extends BaseAdapter {
     public interface DeleteListener {
         void onDelete(Gifticon gifticon);
     }
+
+    private static final String PREF_UI = "main_ui_prefs";
+    private static final String KEY_MANUAL_ORDER = "manual_order_ids";
 
     private final Context context;
     private final List<Gifticon> items = new ArrayList<>();
@@ -44,6 +54,7 @@ public class GifticonAdapter extends BaseAdapter {
     public void setReorderMode(boolean enabled) {
         if (reorderMode == enabled) return;
         reorderMode = enabled;
+        if (!enabled) draggedId = null;
         notifyDataSetChanged();
     }
 
@@ -110,6 +121,10 @@ public class GifticonAdapter extends BaseAdapter {
             LinearLayout dragArea = new LinearLayout(context);
             dragArea.setGravity(Gravity.CENTER);
             dragArea.setBackground(Ui.rounded(0x22D1D1D6, 11, context));
+            dragArea.setClickable(true);
+            dragArea.setLongClickable(true);
+            dragArea.setContentDescription("순서 이동");
+
             ImageView dragHandle = new ImageView(context);
             dragHandle.setImageResource(R.drawable.ic_reorder_handle);
             dragHandle.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -160,14 +175,72 @@ public class GifticonAdapter extends BaseAdapter {
         }
 
         Gifticon g = getItem(position);
+        final Row row = h;
+        final Gifticon boundGifticon = g;
+
         boolean isDragged = g.id != null && g.id.equals(draggedId);
         h.dragArea.setVisibility(reorderMode ? View.VISIBLE : View.GONE);
         h.foreground.setAlpha(isDragged ? 0.14f : (g.isUsed ? 0.62f : 1f));
         h.delete.setAlpha(isDragged ? 0f : 1f);
         h.dragArea.setAlpha(isDragged ? 0.18f : 1f);
         h.foreground.setTranslationX(g.id != null && g.id.equals(openSwipeId) ? -getDeleteWidthPx() : 0f);
+
         h.delete.setOnClickListener(v -> {
-            if (deleteListener != null) deleteListener.onDelete(g);
+            if (deleteListener != null) deleteListener.onDelete(boundGifticon);
+        });
+
+        // 자유 정렬에서는 왼쪽 핸들을 길게 누르면 Android 기본 드래그 섀도가
+        // 손가락을 그대로 따라갑니다. 압력 감지/3D Touch와 무관하게 동작합니다.
+        h.dragArea.setOnLongClickListener(v -> {
+            if (!reorderMode || boundGifticon.id == null) return false;
+            openSwipeId = null;
+            draggedId = boundGifticon.id;
+            v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            notifyDataSetChanged();
+
+            ClipData clip = ClipData.newPlainText("gifticon_id", boundGifticon.id);
+            View.DragShadowBuilder shadow = new View.DragShadowBuilder(row.foreground);
+            boolean started;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                started = row.root.startDragAndDrop(clip, shadow, boundGifticon.id, 0);
+            } else {
+                started = row.root.startDrag(clip, shadow, boundGifticon.id, 0);
+            }
+            if (!started) {
+                draggedId = null;
+                notifyDataSetChanged();
+            }
+            return started;
+        });
+
+        h.root.setOnDragListener((v, event) -> {
+            if (!reorderMode) return false;
+            Object local = event.getLocalState();
+            if (!(local instanceof String)) return false;
+            String movingId = (String) local;
+
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    if (boundGifticon.id != null && !boundGifticon.id.equals(movingId)) {
+                        if (moveItemBefore(movingId, boundGifticon.id)) {
+                            row.root.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                            persistManualOrder();
+                        }
+                    }
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    persistManualOrder();
+                    return true;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    draggedId = null;
+                    persistManualOrder();
+                    notifyDataSetChanged();
+                    return true;
+                default:
+                    return true;
+            }
         });
 
         h.brand.setText(g.brand == null || g.brand.isEmpty() ? "기프티콘" : g.brand);
@@ -198,6 +271,40 @@ public class GifticonAdapter extends BaseAdapter {
             h.image.setImageResource(android.R.drawable.ic_menu_gallery);
         }
         return convertView;
+    }
+
+    private boolean moveItemBefore(String movingId, String targetId) {
+        int from = indexOfId(movingId);
+        int to = indexOfId(targetId);
+        if (from < 0 || to < 0 || from == to) return false;
+
+        Gifticon moving = items.remove(from);
+        if (from < to) to--;
+        items.add(Math.max(0, Math.min(to, items.size())), moving);
+        notifyDataSetChanged();
+        return true;
+    }
+
+    private int indexOfId(String id) {
+        if (id == null) return -1;
+        for (int i = 0; i < items.size(); i++) {
+            Gifticon g = items.get(i);
+            if (g != null && id.equals(g.id)) return i;
+        }
+        return -1;
+    }
+
+    private void persistManualOrder() {
+        if (!reorderMode) return;
+        StringBuilder b = new StringBuilder();
+        Set<String> seen = new HashSet<>();
+        for (Gifticon g : items) {
+            if (g == null || g.id == null || !seen.add(g.id)) continue;
+            if (b.length() > 0) b.append('\n');
+            b.append(g.id);
+        }
+        SharedPreferences p = context.getSharedPreferences(PREF_UI, Context.MODE_PRIVATE);
+        p.edit().putString(KEY_MANUAL_ORDER, b.toString()).apply();
     }
 
     private void bindStatus(TextView view, String text, int textColor, int fillColor) {
