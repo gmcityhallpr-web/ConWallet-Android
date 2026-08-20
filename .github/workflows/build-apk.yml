@@ -1,4 +1,4 @@
-name: Build 디지털폐지모으기 APK
+name: Build 디지털폐지수집 APK
 
 on:
   workflow_dispatch:
