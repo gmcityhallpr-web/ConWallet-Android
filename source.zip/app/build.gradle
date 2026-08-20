@@ -1,0 +1,35 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'kr.co.conwallet'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'kr.co.conwallet'
+        minSdk 23
+        targetSdk 36
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // 기프티콘 이미지 OCR: 한국어 + 영문
+    implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
+    // QR / 바코드 인식
+    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+}
