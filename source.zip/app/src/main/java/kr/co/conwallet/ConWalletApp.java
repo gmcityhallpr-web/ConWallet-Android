@@ -7,5 +7,7 @@ public class ConWalletApp extends Application {
         super.onCreate();
         NotificationHelper.createChannel(this);
         NotificationPrefs.ensureDefaults(this);
+        long thirtyDays = 30L * 24L * 60L * 60L * 1000L;
+        GifticonDb.get(this).purgeTrashOlderThan(System.currentTimeMillis() - thirtyDays);
     }
 }
