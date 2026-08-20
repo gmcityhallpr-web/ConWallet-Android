@@ -12,6 +12,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -24,6 +25,7 @@ import java.util.Calendar;
 public class AddEditGifticonActivity extends Activity {
     private static final int PICK_IMAGE = 101;
     private ImageView image;
+    private TextView imageHint;
     private EditText title, brand, memo;
     private Switch hasExpiry, notify;
     private Button dateButton, saveButton;
@@ -63,29 +65,60 @@ public class AddEditGifticonActivity extends Activity {
         titleCol.setOrientation(LinearLayout.VERTICAL);
         TextView heading = Ui.text(this, existing == null ? "새 기프티콘" : "기프티콘 수정", 27, Ui.colorText());
         heading.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        TextView desc = Ui.text(this, existing == null ? "사진을 고르면 정보를 자동으로 읽어드려요" : "바꿀 내용을 수정한 뒤 저장하세요", 13, Ui.colorSecondary());
+        TextView desc = Ui.text(this, existing == null ? "사진을 고르면 정보를 자동으로 읽어드려요" : "사진을 누르면 새 이미지로 바꿀 수 있어요", 13, Ui.colorSecondary());
         titleCol.addView(heading);
         titleCol.addView(desc);
         header.addView(titleCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(header);
 
+        // 사진 선택 영역 자체를 버튼처럼 사용합니다. 16:9 비율이라 배너 이미지는 1200x675 권장.
+        FrameLayout imagePicker = new FrameLayout(this);
+        imagePicker.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 20, this));
+        imagePicker.setClipToOutline(true);
+        imagePicker.setClickable(true);
+        imagePicker.setFocusable(true);
+        imagePicker.setContentDescription("사진에서 기프티콘 선택");
+        imagePicker.setOnClickListener(v -> pickImage());
+
         image = new ImageView(this);
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        image.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 20, this));
-        image.setClipToOutline(true);
-        LinearLayout.LayoutParams imageLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 230));
-        imageLp.topMargin = Ui.dp(this, 16);
-        root.addView(image, imageLp);
+        image.setClickable(false);
+        imagePicker.addView(image, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
-        Button choose = new Button(this);
-        choose.setText("사진에서 기프티콘 선택");
-        Ui.stylePrimaryButton(choose, this);
-        choose.setOnClickListener(v -> pickImage());
-        LinearLayout.LayoutParams chooseLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        chooseLp.topMargin = Ui.dp(this, 10);
-        root.addView(choose, chooseLp);
+        imageHint = Ui.text(this, "사진에서 기프티콘 선택\n눌러서 사진 고르기", 16, Ui.colorSecondary());
+        imageHint.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        imageHint.setGravity(Gravity.CENTER);
+        imageHint.setClickable(false);
+        imageHint.setPadding(Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18));
+        imagePicker.addView(imageHint, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+        ));
 
-        analyzeStatus = Ui.text(this, "사진을 선택하면 상품명 · 브랜드 · 유효기간 · 바코드를 자동으로 읽어요.", 12, Ui.colorSecondary());
+        LinearLayout.LayoutParams imagePickerLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                Ui.dp(this, 210)
+        );
+        imagePickerLp.topMargin = Ui.dp(this, 16);
+        root.addView(imagePicker, imagePickerLp);
+
+        // 화면 폭에 맞춰 실제 표시 영역을 정확히 16:9로 맞춥니다.
+        imagePicker.post(() -> {
+            int width = imagePicker.getWidth();
+            if (width <= 0) return;
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) imagePicker.getLayoutParams();
+            int targetHeight = Math.round(width * 9f / 16f);
+            if (lp.height != targetHeight) {
+                lp.height = targetHeight;
+                imagePicker.setLayoutParams(lp);
+            }
+        });
+
+        analyzeStatus = Ui.text(this, "위 이미지를 누르면 상품명 · 브랜드 · 유효기간 · 바코드를 자동으로 읽어요.", 12, Ui.colorSecondary());
         analyzeStatus.setPadding(Ui.dp(this, 13), Ui.dp(this, 11), Ui.dp(this, 13), Ui.dp(this, 11));
         analyzeStatus.setBackground(Ui.rounded(Ui.colorBrandSoft(), 14, this));
         LinearLayout.LayoutParams analyzeLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -338,7 +371,10 @@ public class AddEditGifticonActivity extends Activity {
         BitmapFactory.Options o = new BitmapFactory.Options();
         o.inSampleSize = 2;
         Bitmap b = BitmapFactory.decodeFile(path, o);
-        if (b != null) image.setImageBitmap(b);
+        if (b != null) {
+            image.setImageBitmap(b);
+            hideImageHint();
+        }
     }
 
     private void loadImageUri(Uri uri) {
@@ -348,5 +384,10 @@ public class AddEditGifticonActivity extends Activity {
         } catch (Exception ignored) {
             image.setImageURI(uri);
         }
+        hideImageHint();
+    }
+
+    private void hideImageHint() {
+        if (imageHint != null) imageHint.setVisibility(View.GONE);
     }
 }
