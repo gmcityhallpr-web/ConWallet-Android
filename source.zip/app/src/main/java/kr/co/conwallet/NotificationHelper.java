@@ -1,16 +1,20 @@
 package kr.co.conwallet;
 
+import android.Manifest;
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import java.util.Calendar;
 
 public final class NotificationHelper {
     public static final String CHANNEL_ID = "gifticon_expiry";
+    public static final String URGENT_CHANNEL_ID = "gifticon_urgent";
     public static final String EXTRA_ID = "gifticon_id";
     public static final String EXTRA_OFFSET = "offset_days";
 
@@ -19,10 +23,17 @@ public final class NotificationHelper {
     public static void createChannel(Context c) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel ch = new NotificationChannel(
+
+            NotificationChannel normal = new NotificationChannel(
                     CHANNEL_ID, "디지털폐지수집 만료 알림", NotificationManager.IMPORTANCE_DEFAULT);
-            ch.setDescription("디지털폐지수집에 저장한 기프티콘의 유효기간이 가까워지면 알려줍니다.");
-            nm.createNotificationChannel(ch);
+            normal.setDescription("디지털폐지수집에 저장한 기프티콘의 유효기간이 가까워지면 알려줍니다.");
+            nm.createNotificationChannel(normal);
+
+            NotificationChannel urgent = new NotificationChannel(
+                    URGENT_CHANNEL_ID, "디지털폐지수집 임박 알림", NotificationManager.IMPORTANCE_HIGH);
+            urgent.setDescription("7일 이내에 만료되는 기프티콘을 새로 등록하면 즉시 알려줍니다.");
+            urgent.enableVibration(true);
+            nm.createNotificationChannel(urgent);
         }
     }
 
@@ -45,6 +56,56 @@ public final class NotificationHelper {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
         }
+    }
+
+    public static void notifyIfUrgentNow(Context c, Gifticon g) {
+        if (g == null || g.expiryDate == null || !g.notificationsEnabled || g.isUsed || g.deletedAt != null) return;
+        Integer days = g.daysUntilExpiry();
+        if (days == null || days < 0 || days > 7) return;
+
+        if (Build.VERSION.SDK_INT >= 33
+                && c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        createChannel(c);
+
+        Intent open = new Intent(c, GifticonDetailActivity.class)
+                .putExtra("id", g.id)
+                .setAction("kr.co.conwallet.URGENT_" + g.id);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                c,
+                (g.id + ":urgent").hashCode() & 0x7fffffff,
+                open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        String label = g.brand == null || g.brand.trim().isEmpty()
+                ? g.title
+                : g.brand.trim() + " · " + g.title;
+        String body;
+        if (days == 0) body = "오늘 만료돼요. 지금 확인해보세요.";
+        else if (days == 1) body = "내일 만료돼요. 잊지 말고 사용하세요.";
+        else body = "유효기간이 " + days + "일 남았어요. 잊기 전에 사용하세요.";
+
+        Notification.Builder b;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            b = new Notification.Builder(c, URGENT_CHANNEL_ID);
+        } else {
+            b = new Notification.Builder(c)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setDefaults(Notification.DEFAULT_ALL);
+        }
+
+        b.setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle("기프티콘 만료 임박 · " + label)
+                .setContentText(body)
+                .setStyle(new Notification.BigTextStyle().bigText(body))
+                .setAutoCancel(true)
+                .setContentIntent(contentIntent);
+
+        NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        nm.notify((g.id + ":urgent").hashCode(), b.build());
     }
 
     public static void cancel(Context c, String id) {
