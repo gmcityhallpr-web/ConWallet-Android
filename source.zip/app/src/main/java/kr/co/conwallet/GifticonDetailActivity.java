@@ -35,7 +35,7 @@ public class GifticonDetailActivity extends Activity {
 
     private void render() {
         Gifticon g = id == null ? null : GifticonDb.get(this).getById(id);
-        if (g == null) { finish(); return; }
+        if (g == null || g.deletedAt != null) { finish(); return; }
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(Ui.colorBg());
@@ -84,9 +84,7 @@ public class GifticonDetailActivity extends Activity {
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
         Ui.card(info, this);
-        TextView expiry = Ui.text(this,
-                g.expiryDate == null ? "유효기간 없음" : "유효기간 · " + DateUtil.shortDate(g.expiryDate),
-                15, Ui.colorText());
+        TextView expiry = Ui.text(this, g.expiryDate == null ? "유효기간 없음" : "유효기간 · " + DateUtil.shortDate(g.expiryDate), 15, Ui.colorText());
         info.addView(expiry);
         TextView status = Ui.text(this, statusLine(g), 12, Ui.colorSuccess());
         status.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
@@ -100,9 +98,7 @@ public class GifticonDetailActivity extends Activity {
 
         if (g.barcodePayload != null && !g.barcodePayload.isEmpty()) {
             LinearLayout codeCard = sectionCard("바코드 / QR");
-            TextView code = Ui.text(this,
-                    (g.barcodeSymbology == null ? "코드" : g.barcodeSymbology) + " · " + g.barcodePayload,
-                    14, Ui.colorText());
+            TextView code = Ui.text(this, (g.barcodeSymbology == null ? "코드" : g.barcodeSymbology) + " · " + g.barcodePayload, 14, Ui.colorText());
             code.setTextIsSelectable(true);
             code.setPadding(0, 0, 0, Ui.dp(this, 10));
             codeCard.addView(code);
@@ -148,7 +144,7 @@ public class GifticonDetailActivity extends Activity {
         Ui.styleSecondaryButton(edit, this);
         edit.setOnClickListener(v -> startActivity(new Intent(this, AddEditGifticonActivity.class).putExtra("id", g.id)));
         Button delete = new Button(this);
-        delete.setText("삭제");
+        delete.setText("휴지통으로 이동");
         Ui.styleDangerButton(delete, this);
         delete.setOnClickListener(v -> confirmDelete(g));
         LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
@@ -215,13 +211,12 @@ public class GifticonDetailActivity extends Activity {
 
     private void confirmDelete(Gifticon g) {
         new AlertDialog.Builder(this)
-                .setTitle("기프티콘 삭제")
-                .setMessage("이 기프티콘과 저장된 이미지를 삭제할까요?")
+                .setTitle("휴지통으로 이동")
+                .setMessage("이 기프티콘을 휴지통으로 옮길까요? 30일 안에는 복구할 수 있어요.")
                 .setNegativeButton("취소", null)
-                .setPositiveButton("삭제", (d, w) -> {
+                .setPositiveButton("이동", (d, w) -> {
                     NotificationHelper.cancel(this, g.id);
-                    ImageStore.delete(g.imagePath);
-                    GifticonDb.get(this).delete(g.id);
+                    GifticonDb.get(this).moveToTrash(g.id);
                     finish();
                 }).show();
     }
