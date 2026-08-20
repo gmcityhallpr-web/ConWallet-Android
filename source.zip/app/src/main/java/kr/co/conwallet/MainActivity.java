@@ -176,10 +176,10 @@ public class MainActivity extends Activity {
         bubble.setGravity(Gravity.CENTER);
         bubble.setPadding(Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 22));
         bubble.setBackground(Ui.roundedStroke(Color.WHITE, Ui.colorDivider(), 22, this));
-        emptyTitle = Ui.text(this, "사용 가능한 기프티콘이 없어요", 19, Ui.colorText());
+        emptyTitle = Ui.text(this, "기프티콘 쓸게 없는데 뭘 먹겠단건데?", 19, Ui.colorText());
         emptyTitle.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         emptyTitle.setGravity(Gravity.CENTER);
-        emptyBody = Ui.text(this, "＋ 추가 버튼으로 기프티콘을 등록해보세요.", 13, Ui.colorSecondary());
+        emptyBody = Ui.text(this, "오른쪽 상단에 추가 버튼 눌러서 기프티콘 등록해", 13, Ui.colorSecondary());
         emptyBody.setGravity(Gravity.CENTER);
         emptyBody.setPadding(0, Ui.dp(this, 8), 0, 0);
         bubble.addView(emptyTitle);
@@ -309,8 +309,8 @@ public class MainActivity extends Activity {
         }
         switch (filterIndex) {
             case 0:
-                emptyTitle.setText("사용 가능한 기프티콘이 없어요");
-                emptyBody.setText("＋ 추가 버튼으로 기프티콘을 등록해보세요.");
+                emptyTitle.setText("기프티콘 쓸게 없는데 뭘 먹겠단건데?");
+                emptyBody.setText("오른쪽 상단에 추가 버튼 눌러서 기프티콘 등록해");
                 break;
             case 1:
                 emptyTitle.setText("7일 안에 만료되는 기프티콘이 없어요");
