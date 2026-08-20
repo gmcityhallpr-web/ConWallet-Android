@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -26,6 +27,11 @@ public class SplashActivity extends Activity {
         image.setScaleType(ImageView.ScaleType.FIT_CENTER);
         image.setAdjustViewBounds(true);
 
+        // Android 기본 시작 아이콘 크기에서 이어지는 느낌으로 작게 시작합니다.
+        image.setScaleX(0.18f);
+        image.setScaleY(0.18f);
+        image.setAlpha(0.96f);
+
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -34,10 +40,18 @@ public class SplashActivity extends Activity {
         root.addView(image, lp);
         setContentView(root);
 
-        root.postDelayed(() -> {
-            startActivity(new Intent(this, MainActivity.class));
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            finish();
-        }, 420);
+        // 작게 뜬 이미지를 비율 그대로 빠르고 부드럽게 화면 최대 크기까지 확대합니다.
+        root.post(() -> image.animate()
+                .scaleX(1.0f)
+                .scaleY(1.0f)
+                .alpha(1.0f)
+                .setDuration(460)
+                .setInterpolator(new DecelerateInterpolator(1.7f))
+                .withEndAction(() -> root.postDelayed(() -> {
+                    startActivity(new Intent(this, MainActivity.class));
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    finish();
+                }, 45))
+                .start());
     }
 }
