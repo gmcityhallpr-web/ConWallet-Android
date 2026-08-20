@@ -267,7 +267,7 @@ public class MainActivity extends Activity {
         });
 
         listView.setOnItemLongClickListener((p, v, pos, id) -> {
-            if (sortIndex != 2 || pos < 0 || pos >= displayedItems.size()) return false;
+            if (sortIndex != 2 || filterIndex != 0 || pos < 0 || pos >= displayedItems.size()) return false;
             View foreground = adapter.getForeground(v);
             if (foreground != null) foreground.setTranslationX(0f);
             adapter.rememberOpenSwipeId(null);
@@ -330,7 +330,7 @@ public class MainActivity extends Activity {
                     d.dismiss();
                     reload();
                     if (sortIndex == 2) {
-                        Toast.makeText(this, "항목을 길게 누른 채 위아래로 움직여 순서를 바꿔보세요.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "사용 가능 탭에서 항목을 길게 눌러 순서를 바꿀 수 있어요.", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .show();
@@ -384,6 +384,7 @@ public class MainActivity extends Activity {
         sortItems(shown, all);
         displayedItems.clear();
         displayedItems.addAll(shown);
+        adapter.setReorderMode(sortIndex == 2 && filterIndex == 0);
         adapter.setItems(displayedItems);
         statAvailable.setText(String.valueOf(available));
         statSoon.setText(String.valueOf(soon));
@@ -605,7 +606,7 @@ public class MainActivity extends Activity {
     }
 
     private boolean handleDragTouch(MotionEvent event) {
-        if (!dragging || sortIndex != 2 || listView == null) return false;
+        if (!dragging || sortIndex != 2 || filterIndex != 0 || listView == null) return false;
 
         int action = event.getActionMasked();
         if (action == MotionEvent.ACTION_MOVE) {
