@@ -21,6 +21,14 @@ android {
         }
     }
 
+    applicationVariants.configureEach { variant ->
+    variant.outputs.configureEach { output ->
+        if (variant.buildType.name == 'debug') {
+            outputFileName = 'wookwallet.apk'
+        }
+    }
+}
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
