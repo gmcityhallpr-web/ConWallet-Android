@@ -27,6 +27,7 @@ public class GifticonAdapter extends BaseAdapter {
     private DeleteListener deleteListener;
     private String openSwipeId;
     private String draggedId;
+    private boolean reorderMode = false;
 
     public GifticonAdapter(Context context) { this.context = context; }
 
@@ -38,6 +39,12 @@ public class GifticonAdapter extends BaseAdapter {
 
     public void setDeleteListener(DeleteListener listener) {
         deleteListener = listener;
+    }
+
+    public void setReorderMode(boolean enabled) {
+        if (reorderMode == enabled) return;
+        reorderMode = enabled;
+        notifyDataSetChanged();
     }
 
     public int getDeleteWidthPx() {
@@ -93,12 +100,24 @@ public class GifticonAdapter extends BaseAdapter {
             LinearLayout foreground = new LinearLayout(context);
             foreground.setOrientation(LinearLayout.HORIZONTAL);
             foreground.setGravity(Gravity.CENTER_VERTICAL);
-            foreground.setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 14), Ui.dp(context, 12));
+            foreground.setPadding(Ui.dp(context, 9), Ui.dp(context, 12), Ui.dp(context, 14), Ui.dp(context, 12));
             Ui.card(foreground, context);
             root.addView(foreground, new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT
             ));
+
+            LinearLayout dragArea = new LinearLayout(context);
+            dragArea.setGravity(Gravity.CENTER);
+            dragArea.setBackground(Ui.rounded(0x22D1D1D6, 11, context));
+            ImageView dragHandle = new ImageView(context);
+            dragHandle.setImageResource(R.drawable.ic_reorder_handle);
+            dragHandle.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            dragHandle.setAlpha(0.72f);
+            dragArea.addView(dragHandle, new LinearLayout.LayoutParams(Ui.dp(context, 19), Ui.dp(context, 19)));
+            LinearLayout.LayoutParams dragAreaLp = new LinearLayout.LayoutParams(Ui.dp(context, 34), Ui.dp(context, 82));
+            dragAreaLp.rightMargin = Ui.dp(context, 9);
+            foreground.addView(dragArea, dragAreaLp);
 
             ImageView image = new ImageView(context);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -133,7 +152,7 @@ public class GifticonAdapter extends BaseAdapter {
             textCol.addView(title);
             textCol.addView(expiry);
 
-            h = new Row(root, foreground, delete, image, brand, title, expiry, status);
+            h = new Row(root, foreground, delete, dragArea, dragHandle, image, brand, title, expiry, status);
             root.setTag(h);
             convertView = root;
         } else {
@@ -142,8 +161,10 @@ public class GifticonAdapter extends BaseAdapter {
 
         Gifticon g = getItem(position);
         boolean isDragged = g.id != null && g.id.equals(draggedId);
+        h.dragArea.setVisibility(reorderMode ? View.VISIBLE : View.GONE);
         h.foreground.setAlpha(isDragged ? 0.14f : (g.isUsed ? 0.62f : 1f));
         h.delete.setAlpha(isDragged ? 0f : 1f);
+        h.dragArea.setAlpha(isDragged ? 0.18f : 1f);
         h.foreground.setTranslationX(g.id != null && g.id.equals(openSwipeId) ? -getDeleteWidthPx() : 0f);
         h.delete.setOnClickListener(v -> {
             if (deleteListener != null) deleteListener.onDelete(g);
@@ -189,12 +210,18 @@ public class GifticonAdapter extends BaseAdapter {
         final FrameLayout root;
         final LinearLayout foreground;
         final TextView delete;
+        final LinearLayout dragArea;
+        final ImageView dragHandle;
         final ImageView image;
         final TextView brand, title, expiry, status;
-        Row(FrameLayout r, LinearLayout f, TextView d, ImageView i, TextView b, TextView t, TextView e, TextView s) {
+
+        Row(FrameLayout r, LinearLayout f, TextView d, LinearLayout da, ImageView dh,
+            ImageView i, TextView b, TextView t, TextView e, TextView s) {
             root = r;
             foreground = f;
             delete = d;
+            dragArea = da;
+            dragHandle = dh;
             image = i;
             brand = b;
             title = t;
