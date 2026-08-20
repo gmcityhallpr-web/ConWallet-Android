@@ -35,6 +35,19 @@ android {
     }
 }
 
+// Android Studio에서 Debug APK를 만들면 맥의 다운로드 폴더에도 자동으로 복사합니다.
+def copyDebugApkToDownloads = tasks.register('copyDebugApkToDownloads', Copy) {
+    from(layout.buildDirectory.file('outputs/apk/debug/wookwallet.apk'))
+    into(new File(System.getProperty('user.home'), 'Downloads'))
+    rename { '디지털폐지수집.apk' }
+}
+
+afterEvaluate {
+    tasks.named('assembleDebug').configure {
+        finalizedBy(copyDebugApkToDownloads)
+    }
+}
+
 dependencies {
     // Android 12+ 시스템 스플래시를 앱 첫 화면과 한 애니메이션처럼 연결
     implementation 'androidx.core:core-splashscreen:1.0.1'
