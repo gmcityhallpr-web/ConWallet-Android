@@ -60,7 +60,9 @@ public class SettingsActivity extends Activity {
         LinearLayout notification = card("만료 알림", "사용하기 전에 미리 알려드려요.");
         notification.addView(toggle("D-30 오전 9시", NotificationPrefs.D30));
         notification.addView(toggle("D-7 오전 9시", NotificationPrefs.D7));
+        notification.addView(toggle("D-3 오전 9시", NotificationPrefs.D3));
         notification.addView(toggle("D-1 오전 9시", NotificationPrefs.D1));
+        notification.addView(toggle("만료 당일 오전 9시", NotificationPrefs.D0));
         TextView notice = Ui.text(this, "배터리 최적화 상태에 따라 알림이 몇 분 늦을 수 있어요.", 12, Ui.colorSecondary());
         notice.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 10));
         notification.addView(notice);
