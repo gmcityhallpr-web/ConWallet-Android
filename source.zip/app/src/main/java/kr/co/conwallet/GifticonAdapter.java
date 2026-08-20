@@ -3,7 +3,6 @@ package kr.co.conwallet;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
@@ -38,32 +37,43 @@ public class GifticonAdapter extends BaseAdapter {
             LinearLayout root = new LinearLayout(context);
             root.setOrientation(LinearLayout.HORIZONTAL);
             root.setGravity(Gravity.CENTER_VERTICAL);
-            root.setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 12));
-            root.setBackground(Ui.rounded(Color.WHITE, 16, context));
+            root.setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 14), Ui.dp(context, 12));
+            Ui.card(root, context);
 
             ImageView image = new ImageView(context);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            image.setBackground(Ui.rounded(Color.rgb(238, 240, 245), 12, context));
-            root.addView(image, new LinearLayout.LayoutParams(Ui.dp(context, 76), Ui.dp(context, 76)));
+            image.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 14, context));
+            image.setClipToOutline(true);
+            root.addView(image, new LinearLayout.LayoutParams(Ui.dp(context, 82), Ui.dp(context, 82)));
 
             LinearLayout textCol = new LinearLayout(context);
             textCol.setOrientation(LinearLayout.VERTICAL);
-            textCol.setPadding(Ui.dp(context, 12), 0, 0, 0);
+            textCol.setPadding(Ui.dp(context, 13), 0, 0, 0);
             root.addView(textCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
+            LinearLayout meta = new LinearLayout(context);
+            meta.setGravity(Gravity.CENTER_VERTICAL);
             TextView brand = Ui.text(context, "", 12, Ui.colorSecondary());
+            brand.setMaxLines(1);
+            TextView status = Ui.text(context, "", 11, Ui.colorSuccess());
+            status.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            status.setGravity(Gravity.CENTER);
+            status.setPadding(Ui.dp(context, 9), Ui.dp(context, 4), Ui.dp(context, 9), Ui.dp(context, 4));
+            meta.addView(brand, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            meta.addView(status);
+
             TextView title = Ui.text(context, "", 16, Ui.colorText());
             title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
             title.setMaxLines(2);
+            title.setPadding(0, Ui.dp(context, 5), 0, 0);
             TextView expiry = Ui.text(context, "", 13, Ui.colorSecondary());
-            TextView status = Ui.text(context, "", 12, Ui.colorBrand());
-            status.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-            textCol.addView(brand);
+            expiry.setPadding(0, Ui.dp(context, 7), 0, 0);
+
+            textCol.addView(meta);
             textCol.addView(title);
             textCol.addView(expiry);
-            textCol.addView(status);
 
-            h = new Row(image, brand, title, expiry, status);
+            h = new Row(root, image, brand, title, expiry, status);
             root.setTag(h);
             convertView = root;
         } else {
@@ -71,29 +81,49 @@ public class GifticonAdapter extends BaseAdapter {
         }
 
         Gifticon g = getItem(position);
+        h.root.setAlpha(g.isUsed ? 0.62f : 1f);
         h.brand.setText(g.brand == null || g.brand.isEmpty() ? "기프티콘" : g.brand);
-        h.title.setText(g.title);
-        h.expiry.setText(g.expiryDate == null ? "유효기간 없음" : "유효기간  " + DateUtil.shortDate(g.expiryDate));
+        h.title.setText(g.title == null || g.title.trim().isEmpty() ? "이름 없는 기프티콘" : g.title);
+        h.expiry.setText(g.expiryDate == null ? "유효기간 없음" : "유효기간 · " + DateUtil.shortDate(g.expiryDate));
+
         Integer d = g.daysUntilExpiry();
-        if (g.isUsed) h.status.setText("사용 완료");
-        else if (g.isExpired()) h.status.setText("기간 만료");
-        else if (d != null) h.status.setText(d == 0 ? "오늘 만료" : "D-" + d);
-        else h.status.setText("사용 가능");
+        if (g.isUsed) {
+            bindStatus(h.status, "사용 완료", Ui.colorSecondary(), Ui.colorNeutralSoft());
+        } else if (g.isExpired()) {
+            bindStatus(h.status, "기간 만료", Ui.colorDanger(), Ui.colorDangerSoft());
+        } else if (d != null && d <= 7) {
+            bindStatus(h.status, d == 0 ? "오늘 만료" : "D-" + d, Ui.colorWarning(), Ui.colorWarningSoft());
+        } else if (d != null) {
+            bindStatus(h.status, "D-" + d, Ui.colorSuccess(), Ui.colorSuccessSoft());
+        } else {
+            bindStatus(h.status, "사용 가능", Ui.colorSuccess(), Ui.colorSuccessSoft());
+        }
 
         h.image.setImageDrawable(null);
         if (g.imagePath != null && new File(g.imagePath).exists()) {
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inSampleSize = 4;
             Bitmap b = BitmapFactory.decodeFile(g.imagePath, o);
-            h.image.setImageBitmap(b);
+            if (b != null) h.image.setImageBitmap(b);
+            else h.image.setImageResource(android.R.drawable.ic_menu_gallery);
         } else {
             h.image.setImageResource(android.R.drawable.ic_menu_gallery);
         }
         return convertView;
     }
 
+    private void bindStatus(TextView view, String text, int textColor, int fillColor) {
+        view.setText(text);
+        view.setTextColor(textColor);
+        view.setBackground(Ui.rounded(fillColor, 999, context));
+    }
+
     private static class Row {
-        final ImageView image; final TextView brand, title, expiry, status;
-        Row(ImageView i, TextView b, TextView t, TextView e, TextView s) { image=i; brand=b; title=t; expiry=e; status=s; }
+        final LinearLayout root;
+        final ImageView image;
+        final TextView brand, title, expiry, status;
+        Row(LinearLayout r, ImageView i, TextView b, TextView t, TextView e, TextView s) {
+            root = r; image = i; brand = b; title = t; expiry = e; status = s;
+        }
     }
 }
