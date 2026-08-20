@@ -12,7 +12,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         int offset = intent.getIntExtra(NotificationHelper.EXTRA_OFFSET, -1);
         if (id == null) return;
         Gifticon g = GifticonDb.get(context).getById(id);
-        if (g == null || g.isUsed || !g.notificationsEnabled) return;
+        if (g == null || g.deletedAt != null || g.isUsed || !g.notificationsEnabled) return;
 
         Intent open = new Intent(context, GifticonDetailActivity.class).putExtra("id", id);
         PendingIntent contentIntent = PendingIntent.getActivity(context, id.hashCode() & 0x7fffffff, open,
@@ -20,7 +20,8 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         String label = g.brand == null || g.brand.trim().isEmpty() ? g.title : g.brand + " · " + g.title;
         String body;
-        if (offset == 1) body = "내일 만료돼요. 사용 여부를 확인하세요.";
+        if (offset == 0) body = "오늘 만료돼요. 잊지 말고 사용하세요.";
+        else if (offset == 1) body = "내일 만료돼요. 사용 여부를 확인하세요.";
         else body = "유효기간이 " + offset + "일 남았어요.";
 
         android.app.Notification.Builder b;
