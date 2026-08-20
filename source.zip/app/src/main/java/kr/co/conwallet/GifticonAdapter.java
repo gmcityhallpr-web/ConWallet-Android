@@ -196,7 +196,6 @@ public class GifticonAdapter extends BaseAdapter {
             openSwipeId = null;
             draggedId = boundGifticon.id;
             v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-            notifyDataSetChanged();
 
             ClipData clip = ClipData.newPlainText("gifticon_id", boundGifticon.id);
             View.DragShadowBuilder shadow = new View.DragShadowBuilder(row.foreground);
@@ -206,7 +205,9 @@ public class GifticonAdapter extends BaseAdapter {
             } else {
                 started = row.root.startDrag(clip, shadow, boundGifticon.id, 0);
             }
-            if (!started) {
+            if (started) {
+                notifyDataSetChanged();
+            } else {
                 draggedId = null;
                 notifyDataSetChanged();
             }
@@ -224,7 +225,7 @@ public class GifticonAdapter extends BaseAdapter {
                     return true;
                 case DragEvent.ACTION_DRAG_ENTERED:
                     if (boundGifticon.id != null && !boundGifticon.id.equals(movingId)) {
-                        if (moveItemBefore(movingId, boundGifticon.id)) {
+                        if (moveItemToTarget(movingId, boundGifticon.id)) {
                             row.root.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
                             persistManualOrder();
                         }
@@ -273,14 +274,14 @@ public class GifticonAdapter extends BaseAdapter {
         return convertView;
     }
 
-    private boolean moveItemBefore(String movingId, String targetId) {
+    private boolean moveItemToTarget(String movingId, String targetId) {
         int from = indexOfId(movingId);
         int to = indexOfId(targetId);
         if (from < 0 || to < 0 || from == to) return false;
 
         Gifticon moving = items.remove(from);
-        if (from < to) to--;
-        items.add(Math.max(0, Math.min(to, items.size())), moving);
+        int target = Math.max(0, Math.min(to, items.size()));
+        items.add(target, moving);
         notifyDataSetChanged();
         return true;
     }
