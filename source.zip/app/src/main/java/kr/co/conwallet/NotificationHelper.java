@@ -10,11 +10,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.widget.Toast;
 import java.util.Calendar;
 
 public final class NotificationHelper {
     public static final String CHANNEL_ID = "gifticon_expiry";
-    public static final String URGENT_CHANNEL_ID = "gifticon_urgent";
+    // v2를 써서 예전에 만들어진 채널 설정과 섞이지 않고 HIGH 중요도로 새로 생성되게 합니다.
+    public static final String URGENT_CHANNEL_ID = "gifticon_urgent_v2";
     public static final String EXTRA_ID = "gifticon_id";
     public static final String EXTRA_OFFSET = "offset_days";
 
@@ -30,9 +32,10 @@ public final class NotificationHelper {
             nm.createNotificationChannel(normal);
 
             NotificationChannel urgent = new NotificationChannel(
-                    URGENT_CHANNEL_ID, "디지털폐지수집 임박 알림", NotificationManager.IMPORTANCE_HIGH);
+                    URGENT_CHANNEL_ID, "디지털폐지수집 임박 즉시 알림", NotificationManager.IMPORTANCE_HIGH);
             urgent.setDescription("7일 이내에 만료되는 기프티콘을 새로 등록하면 즉시 알려줍니다.");
             urgent.enableVibration(true);
+            urgent.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             nm.createNotificationChannel(urgent);
         }
     }
@@ -63,6 +66,17 @@ public final class NotificationHelper {
         Integer days = g.daysUntilExpiry();
         if (days == null || days < 0 || days > 7) return;
 
+        String label = g.brand == null || g.brand.trim().isEmpty()
+                ? g.title
+                : g.brand.trim() + " · " + g.title;
+        String body;
+        if (days == 0) body = "오늘 만료돼요. 지금 확인해보세요.";
+        else if (days == 1) body = "내일 만료돼요. 잊지 말고 사용하세요.";
+        else body = "유효기간이 " + days + "일 남았어요. 잊기 전에 사용하세요.";
+
+        // 앱 화면을 보고 있는 순간에도 즉시 반응을 확인할 수 있게 토스트를 함께 표시합니다.
+        Toast.makeText(c, "⚠ " + label + " · " + body, Toast.LENGTH_LONG).show();
+
         if (Build.VERSION.SDK_INT >= 33
                 && c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -80,14 +94,6 @@ public final class NotificationHelper {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        String label = g.brand == null || g.brand.trim().isEmpty()
-                ? g.title
-                : g.brand.trim() + " · " + g.title;
-        String body;
-        if (days == 0) body = "오늘 만료돼요. 지금 확인해보세요.";
-        else if (days == 1) body = "내일 만료돼요. 잊지 말고 사용하세요.";
-        else body = "유효기간이 " + days + "일 남았어요. 잊기 전에 사용하세요.";
-
         Notification.Builder b;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             b = new Notification.Builder(c, URGENT_CHANNEL_ID);
@@ -102,10 +108,12 @@ public final class NotificationHelper {
                 .setContentText(body)
                 .setStyle(new Notification.BigTextStyle().bigText(body))
                 .setAutoCancel(true)
-                .setContentIntent(contentIntent);
+                .setContentIntent(contentIntent)
+                .setCategory(Notification.CATEGORY_REMINDER)
+                .setVisibility(Notification.VISIBILITY_PUBLIC);
 
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.notify((g.id + ":urgent").hashCode(), b.build());
+        nm.notify((g.id + ":urgent:v2").hashCode(), b.build());
     }
 
     public static void cancel(Context c, String id) {
