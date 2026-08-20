@@ -25,7 +25,6 @@ import java.util.Calendar;
 public class AddEditGifticonActivity extends Activity {
     private static final int PICK_IMAGE = 101;
     private ImageView image;
-    private TextView imageHint;
     private EditText title, brand, memo;
     private Switch hasExpiry, notify;
     private Button dateButton, saveButton;
@@ -65,13 +64,13 @@ public class AddEditGifticonActivity extends Activity {
         titleCol.setOrientation(LinearLayout.VERTICAL);
         TextView heading = Ui.text(this, existing == null ? "새 기프티콘" : "기프티콘 수정", 27, Ui.colorText());
         heading.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        TextView desc = Ui.text(this, existing == null ? "사진을 고르면 정보를 자동으로 읽어드려요" : "사진을 누르면 새 이미지로 바꿀 수 있어요", 13, Ui.colorSecondary());
+        TextView desc = Ui.text(this, existing == null ? "이미지를 눌러 기프티콘 사진을 골라주세요" : "사진을 누르면 새 이미지로 바꿀 수 있어요", 13, Ui.colorSecondary());
         titleCol.addView(heading);
         titleCol.addView(desc);
         header.addView(titleCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         root.addView(header);
 
-        // 사진 선택 영역 자체를 버튼처럼 사용합니다. 16:9 비율이라 배너 이미지는 1200x675 권장.
+        // 업로드한 16:9 안내 이미지를 기본으로 보여주고, 이 영역 자체가 사진 선택 버튼입니다.
         FrameLayout imagePicker = new FrameLayout(this);
         imagePicker.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 20, this));
         imagePicker.setClipToOutline(true);
@@ -81,22 +80,12 @@ public class AddEditGifticonActivity extends Activity {
         imagePicker.setOnClickListener(v -> pickImage());
 
         image = new ImageView(this);
-        image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        image.setImageResource(R.drawable.gifticon_placeholder);
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);
         image.setClickable(false);
         imagePicker.addView(image, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
-        ));
-
-        imageHint = Ui.text(this, "사진에서 기프티콘 선택\n눌러서 사진 고르기", 16, Ui.colorSecondary());
-        imageHint.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        imageHint.setGravity(Gravity.CENTER);
-        imageHint.setClickable(false);
-        imageHint.setPadding(Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18), Ui.dp(this, 18));
-        imagePicker.addView(imageHint, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                Gravity.CENTER
         ));
 
         LinearLayout.LayoutParams imagePickerLp = new LinearLayout.LayoutParams(
@@ -106,12 +95,12 @@ public class AddEditGifticonActivity extends Activity {
         imagePickerLp.topMargin = Ui.dp(this, 16);
         root.addView(imagePicker, imagePickerLp);
 
-        // 화면 폭에 맞춰 실제 표시 영역을 정확히 16:9로 맞춥니다.
+        // 화면 폭에 맞춰 업로드한 1672x941 비율로 표시합니다.
         imagePicker.post(() -> {
             int width = imagePicker.getWidth();
             if (width <= 0) return;
             LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) imagePicker.getLayoutParams();
-            int targetHeight = Math.round(width * 9f / 16f);
+            int targetHeight = Math.round(width * 941f / 1672f);
             if (lp.height != targetHeight) {
                 lp.height = targetHeight;
                 imagePicker.setLayoutParams(lp);
@@ -371,10 +360,7 @@ public class AddEditGifticonActivity extends Activity {
         BitmapFactory.Options o = new BitmapFactory.Options();
         o.inSampleSize = 2;
         Bitmap b = BitmapFactory.decodeFile(path, o);
-        if (b != null) {
-            image.setImageBitmap(b);
-            hideImageHint();
-        }
+        if (b != null) image.setImageBitmap(b);
     }
 
     private void loadImageUri(Uri uri) {
@@ -384,10 +370,5 @@ public class AddEditGifticonActivity extends Activity {
         } catch (Exception ignored) {
             image.setImageURI(uri);
         }
-        hideImageHint();
-    }
-
-    private void hideImageHint() {
-        if (imageHint != null) imageHint.setVisibility(View.GONE);
     }
 }
