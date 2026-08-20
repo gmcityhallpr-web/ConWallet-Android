@@ -130,7 +130,7 @@ public class MainActivity extends Activity {
         list.setDividerHeight(Ui.dp(this, 10));
         list.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 20));
         list.setClipToPadding(false);
-        list.setSelector(Color.TRANSPARENT);
+        list.setSelector(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         list.setBackgroundColor(Color.TRANSPARENT);
         list.setOverScrollMode(View.OVER_SCROLL_NEVER);
         adapter = new GifticonAdapter(this);
