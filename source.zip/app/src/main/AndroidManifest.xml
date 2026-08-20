@@ -15,8 +15,9 @@
         <activity android:name=".SettingsActivity" />
         <activity android:name=".AddEditGifticonActivity" />
         <activity android:name=".GifticonDetailActivity" />
+        <activity android:name=".MainActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
