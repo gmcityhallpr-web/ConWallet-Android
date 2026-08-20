@@ -331,7 +331,8 @@ public class AddEditGifticonActivity extends Activity {
     }
 
     private void doSave(String t) {
-        Gifticon g = existing == null ? new Gifticon() : existing;
+        boolean isNew = existing == null;
+        Gifticon g = isNew ? new Gifticon() : existing;
         String oldPath = g.imagePath;
         try {
             if (selectedImageUri != null) {
@@ -350,6 +351,7 @@ public class AddEditGifticonActivity extends Activity {
             g.deletedAt = null;
             GifticonDb.get(this).save(g);
             NotificationHelper.schedule(this, g);
+            if (isNew) NotificationHelper.notifyIfUrgentNow(this, g);
             finish();
         } catch (Exception e) {
             Toast.makeText(this, "저장 실패: " + e.getMessage(), Toast.LENGTH_LONG).show();
