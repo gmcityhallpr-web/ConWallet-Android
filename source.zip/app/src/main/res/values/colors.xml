@@ -1,7 +1,10 @@
 <resources>
-    <color name="brand">#335CFF</color>
-    <color name="brand_dark">#2342C7</color>
-    <color name="background">#F6F7FB</color>
-    <color name="text_primary">#17181C</color>
-    <color name="text_secondary">#666A73</color>
+    <color name="brand">#CA141F</color>
+    <color name="brand_dark">#9A0F18</color>
+    <color name="brand_soft">#FFEFF1</color>
+    <color name="background">#F7F7F9</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#18181B</color>
+    <color name="text_secondary">#71717A</color>
+    <color name="divider">#E4E4E7</color>
 </resources>
