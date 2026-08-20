@@ -11,6 +11,7 @@
         android:supportsRtl="true">
 
         <activity android:name=".StoreModeActivity" android:screenOrientation="unspecified" />
+        <activity android:name=".TrashActivity" />
         <activity android:name=".SettingsActivity" />
         <activity android:name=".AddEditGifticonActivity" />
         <activity android:name=".GifticonDetailActivity" />
