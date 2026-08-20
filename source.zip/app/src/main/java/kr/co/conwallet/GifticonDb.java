@@ -12,13 +12,17 @@ public class GifticonDb extends SQLiteOpenHelper {
     private static final String DB_NAME = "conwallet.db";
     private static final int DB_VERSION = 2;
     private static GifticonDb instance;
+    private final Context appContext;
 
     public static synchronized GifticonDb get(Context c) {
         if (instance == null) instance = new GifticonDb(c.getApplicationContext());
         return instance;
     }
 
-    private GifticonDb(Context c) { super(c, DB_NAME, null, DB_VERSION); }
+    private GifticonDb(Context c) {
+        super(c, DB_NAME, null, DB_VERSION);
+        appContext = c.getApplicationContext();
+    }
 
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE gifticons (" +
@@ -51,6 +55,7 @@ public class GifticonDb extends SQLiteOpenHelper {
     public void save(Gifticon g) {
         ContentValues v = values(g);
         getWritableDatabase().insertWithOnConflict("gifticons", null, v, SQLiteDatabase.CONFLICT_REPLACE);
+        refreshWidget();
     }
 
     public Gifticon getById(String id) {
@@ -93,27 +98,42 @@ public class GifticonDb extends SQLiteOpenHelper {
         ContentValues v = new ContentValues();
         v.put("deleted_at", System.currentTimeMillis());
         getWritableDatabase().update("gifticons", v, "id=?", new String[]{id});
+        refreshWidget();
     }
 
     public void restore(String id) {
         ContentValues v = new ContentValues();
         v.putNull("deleted_at");
         getWritableDatabase().update("gifticons", v, "id=?", new String[]{id});
+        refreshWidget();
     }
 
     public void delete(String id) {
         getWritableDatabase().delete("gifticons", "id=?", new String[]{id});
+        refreshWidget();
     }
 
-    public void deleteAll() { getWritableDatabase().delete("gifticons", null, null); }
+    public void deleteAll() {
+        getWritableDatabase().delete("gifticons", null, null);
+        refreshWidget();
+    }
 
     public void purgeTrashOlderThan(long cutoff) {
+        boolean changed = false;
         for (Gifticon g : trash()) {
             if (g.deletedAt != null && g.deletedAt < cutoff) {
                 ImageStore.delete(g.imagePath);
-                delete(g.id);
+                getWritableDatabase().delete("gifticons", "id=?", new String[]{g.id});
+                changed = true;
             }
         }
+        if (changed) refreshWidget();
+    }
+
+    private void refreshWidget() {
+        try {
+            WookWidgetProvider.refreshAll(appContext);
+        } catch (Exception ignored) {}
     }
 
     private static ContentValues values(Gifticon g) {
