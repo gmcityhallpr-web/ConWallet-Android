@@ -33,7 +33,7 @@ public final class NotificationHelper {
     public static void schedule(Context c, Gifticon g) {
         if (g == null) return;
         cancel(c, g.id);
-        if (g.isUsed || !g.notificationsEnabled || g.expiryDate == null) return;
+        if (g.isUsed || g.deletedAt != null || !g.notificationsEnabled || g.expiryDate == null) return;
         for (Integer offset : NotificationPrefs.enabledOffsets(c)) {
             long when = notificationTime(g.expiryDate, offset);
             if (when <= System.currentTimeMillis()) continue;
@@ -50,7 +50,7 @@ public final class NotificationHelper {
     public static void cancel(Context c, String id) {
         if (id == null) return;
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
-        for (int offset : new int[]{30, 7, 1}) {
+        for (int offset : new int[]{30, 7, 3, 1, 0}) {
             Intent intent = new Intent(c, NotificationReceiver.class);
             PendingIntent pi = PendingIntent.getBroadcast(c, requestCode(id, offset), intent,
                     PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
