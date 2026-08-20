@@ -27,7 +27,7 @@ public class SettingsActivity extends Activity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Ui.prepareWindow(this);
-        setTitle("디지털폐지모으기 설정");
+        setTitle("디지털폐지수집 설정");
         setContentView(buildUi());
     }
 
@@ -49,7 +49,7 @@ public class SettingsActivity extends Activity {
         header.addView(back, backLp);
         LinearLayout titleCol = new LinearLayout(this);
         titleCol.setOrientation(LinearLayout.VERTICAL);
-        TextView title = Ui.text(this, "디지털폐지모으기 설정", 27, Ui.colorText());
+        TextView title = Ui.text(this, "디지털폐지수집 설정", 27, Ui.colorText());
         title.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
         TextView intro = Ui.text(this, "알림과 백업을 한곳에서 관리해요", 13, Ui.colorSecondary());
         titleCol.addView(title);
@@ -77,7 +77,7 @@ public class SettingsActivity extends Activity {
         addCard(root, notification);
 
         LinearLayout backup = card("백업 · 복원", "기프티콘 이미지까지 JSON 파일 하나에 담아요.");
-        TextView compatible = Ui.text(this, "iPhone 디지털폐지모으기와 같은 백업 형식을 사용합니다.", 13, Ui.colorSecondary());
+        TextView compatible = Ui.text(this, "iPhone 디지털폐지수집과 같은 백업 형식을 사용합니다.", 13, Ui.colorSecondary());
         compatible.setPadding(0, 0, 0, Ui.dp(this, 12));
         backup.addView(compatible);
         LinearLayout backupButtons = new LinearLayout(this);
