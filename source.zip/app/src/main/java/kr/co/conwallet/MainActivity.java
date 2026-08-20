@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -137,24 +138,58 @@ public class MainActivity extends Activity {
         list.setAdapter(adapter);
         content.addView(list, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
-        LinearLayout empty = new LinearLayout(this);
-        empty.setOrientation(LinearLayout.VERTICAL);
-        empty.setGravity(Gravity.CENTER);
-        empty.setPadding(Ui.dp(this, 28), Ui.dp(this, 28), Ui.dp(this, 28), Ui.dp(this, 28));
-        Ui.card(empty, this);
-        emptyTitle = Ui.text(this, "아직 보관한 기프티콘이 없어요", 18, Ui.colorText());
+        LinearLayout emptyWrap = new LinearLayout(this);
+        emptyWrap.setOrientation(LinearLayout.VERTICAL);
+        emptyWrap.setGravity(Gravity.CENTER_HORIZONTAL);
+        emptyWrap.setPadding(Ui.dp(this, 8), Ui.dp(this, 16), Ui.dp(this, 8), Ui.dp(this, 16));
+
+        FrameLayout avatarBubble = new FrameLayout(this);
+        avatarBubble.setBackground(Ui.rounded(Ui.colorBrandSoft(), 999, this));
+        avatarBubble.setPadding(Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5), Ui.dp(this, 5));
+
+        ImageView avatar = new ImageView(this);
+        avatar.setImageResource(R.drawable.wook_launcher);
+        avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        avatarBubble.addView(avatar, new FrameLayout.LayoutParams(Ui.dp(this, 148), Ui.dp(this, 148), Gravity.CENTER));
+
+        LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(Ui.dp(this, 158), Ui.dp(this, 158));
+        avatarLp.bottomMargin = Ui.dp(this, 8);
+        emptyWrap.addView(avatarBubble, avatarLp);
+
+        FrameLayout speech = new FrameLayout(this);
+
+        View tail = new View(this);
+        tail.setBackground(Ui.roundedStroke(Color.WHITE, Ui.colorDivider(), 5, this));
+        tail.setRotation(45f);
+        FrameLayout.LayoutParams tailLp = new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20), Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        tailLp.topMargin = Ui.dp(this, 2);
+        speech.addView(tail, tailLp);
+
+        LinearLayout bubble = new LinearLayout(this);
+        bubble.setOrientation(LinearLayout.VERTICAL);
+        bubble.setGravity(Gravity.CENTER);
+        bubble.setPadding(Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 24), Ui.dp(this, 22));
+        bubble.setBackground(Ui.roundedStroke(Color.WHITE, Ui.colorDivider(), 22, this));
+
+        emptyTitle = Ui.text(this, "사용 가능한 기프티콘이 없어요", 19, Ui.colorText());
         emptyTitle.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         emptyTitle.setGravity(Gravity.CENTER);
-        emptyBody = Ui.text(this, "위의 ＋ 추가 버튼으로 첫 기프티콘을 등록해보세요.", 13, Ui.colorSecondary());
+        emptyBody = Ui.text(this, "＋ 추가 버튼으로 기프티콘을 등록해보세요.", 13, Ui.colorSecondary());
         emptyBody.setGravity(Gravity.CENTER);
         emptyBody.setPadding(0, Ui.dp(this, 8), 0, 0);
-        empty.addView(emptyTitle);
-        empty.addView(emptyBody);
+        bubble.addView(emptyTitle);
+        bubble.addView(emptyBody);
+
+        FrameLayout.LayoutParams bubbleLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        bubbleLp.topMargin = Ui.dp(this, 11);
+        speech.addView(bubble, bubbleLp);
+        emptyWrap.addView(speech, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
         FrameLayout.LayoutParams emptyLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         emptyLp.leftMargin = Ui.dp(this, 4);
         emptyLp.rightMargin = Ui.dp(this, 4);
-        content.addView(empty, emptyLp);
-        list.setEmptyView(empty);
+        content.addView(emptyWrap, emptyLp);
+        list.setEmptyView(emptyWrap);
         root.addView(content, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
 
         search.addTextChangedListener(new TextWatcher() {
