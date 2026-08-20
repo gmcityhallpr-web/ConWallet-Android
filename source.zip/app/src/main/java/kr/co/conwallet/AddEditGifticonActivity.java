@@ -1,6 +1,7 @@
 package kr.co.conwallet;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -245,7 +246,11 @@ public class AddEditGifticonActivity extends Activity {
                     analyzedBarcode = a.barcodePayload;
                     analyzedSymbology = a.barcodeSymbology;
                     updateBarcodeText();
-                    analyzeStatus.setText("자동 인식 완료 · 잘못 읽은 값은 저장 전에 수정하세요.");
+                    Gifticon duplicate = GifticonDb.get(AddEditGifticonActivity.this)
+                            .findActiveByBarcode(analyzedBarcode, existing == null ? null : existing.id);
+                    analyzeStatus.setText(duplicate == null
+                            ? "자동 인식 완료 · 잘못 읽은 값은 저장 전에 수정하세요."
+                            : "⚠ 같은 바코드가 이미 있어요 · " + duplicate.title);
                     saveButton.setEnabled(true);
                 });
             }
@@ -290,6 +295,20 @@ public class AddEditGifticonActivity extends Activity {
             Toast.makeText(this, "상품명을 입력해 주세요.", Toast.LENGTH_SHORT).show();
             return;
         }
+        Gifticon duplicate = GifticonDb.get(this).findActiveByBarcode(analyzedBarcode, existing == null ? null : existing.id);
+        if (duplicate != null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("중복 기프티콘 확인")
+                    .setMessage("같은 바코드의 ‘" + duplicate.title + "’이 이미 있어요. 그래도 저장할까요?")
+                    .setNegativeButton("취소", null)
+                    .setPositiveButton("그래도 저장", (d, w) -> doSave(t))
+                    .show();
+        } else {
+            doSave(t);
+        }
+    }
+
+    private void doSave(String t) {
         Gifticon g = existing == null ? new Gifticon() : existing;
         String oldPath = g.imagePath;
         try {
@@ -306,6 +325,7 @@ public class AddEditGifticonActivity extends Activity {
             g.barcodePayload = analyzedBarcode;
             g.barcodeSymbology = analyzedSymbology;
             g.updatedAt = System.currentTimeMillis();
+            g.deletedAt = null;
             GifticonDb.get(this).save(g);
             NotificationHelper.schedule(this, g);
             finish();
