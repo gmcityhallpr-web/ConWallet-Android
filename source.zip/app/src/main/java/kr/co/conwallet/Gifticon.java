@@ -17,6 +17,7 @@ public class Gifticon {
     public String barcodePayload = null;
     public String barcodeSymbology = null;
     public String imagePath = null;
+    public Long deletedAt = null;
 
     public boolean isExpired() {
         if (expiryDate == null) return false;
