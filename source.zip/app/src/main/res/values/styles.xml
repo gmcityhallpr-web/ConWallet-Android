@@ -8,4 +8,10 @@
         <item name="android:colorAccent">#CA141F</item>
         <item name="android:windowBackground">#F7F7F9</item>
     </style>
+
+    <style name="AppTheme.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/wook_launcher</item>
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
+    </style>
 </resources>
