@@ -19,7 +19,7 @@
             android:layout_height="40dp"
             android:src="@drawable/wook_launcher"
             android:scaleType="centerCrop"
-            android:contentDescription="디지털폐지모으기" />
+            android:contentDescription="디지털폐지수집" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -31,7 +31,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="디지털폐지모으기"
+                android:text="디지털폐지수집"
                 android:textStyle="bold"
                 android:textSize="18sp"
                 android:textColor="#18181B" />
@@ -53,7 +53,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="사용 가능한 기프티콘이 없어요\n디지털폐지모으기를 눌러 추가해보세요"
+        android:text="사용 가능한 기프티콘이 없어요\n디지털폐지수집을 눌러 추가해보세요"
         android:textSize="14sp"
         android:textColor="#71717A"
         android:visibility="gone" />
