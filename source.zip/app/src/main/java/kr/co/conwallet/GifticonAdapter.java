@@ -143,6 +143,7 @@ public class GifticonAdapter extends BaseAdapter {
         Gifticon g = getItem(position);
         boolean isDragged = g.id != null && g.id.equals(draggedId);
         h.foreground.setAlpha(isDragged ? 0.14f : (g.isUsed ? 0.62f : 1f));
+        h.delete.setAlpha(isDragged ? 0f : 1f);
         h.foreground.setTranslationX(g.id != null && g.id.equals(openSwipeId) ? -getDeleteWidthPx() : 0f);
         h.delete.setOnClickListener(v -> {
             if (deleteListener != null) deleteListener.onDelete(g);
