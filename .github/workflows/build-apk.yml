@@ -20,12 +20,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Unpack source
-        run: unzip -q source.zip
       - name: Build debug APK
-        working-directory: ConWallet-Android-v1.0
+        working-directory: source.zip
         run: gradle :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: ConWallet-Android-debug
-          path: ConWallet-Android-v1.0/app/build/outputs/apk/debug/app-debug.apk
+          path: source.zip/app/build/outputs/apk/debug/app-debug.apk
