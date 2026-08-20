@@ -22,12 +22,12 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
-    variant.outputs.configureEach { output ->
-        if (variant.buildType.name == 'debug') {
-            outputFileName = 'wookwallet.apk'
+        variant.outputs.configureEach { output ->
+            if (variant.buildType.name == 'debug') {
+                outputFileName = 'wookwallet.apk'
+            }
         }
     }
-}
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -36,6 +36,8 @@ android {
 }
 
 dependencies {
+    // Android 12+ 시스템 스플래시를 앱 첫 화면과 한 애니메이션처럼 연결
+    implementation 'androidx.core:core-splashscreen:1.0.1'
     // 기프티콘 이미지 OCR: 한국어 + 영문
     implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
     // QR / 바코드 인식
