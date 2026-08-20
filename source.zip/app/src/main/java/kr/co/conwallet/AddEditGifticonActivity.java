@@ -5,10 +5,8 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -19,7 +17,6 @@ import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.io.File;
 import java.io.InputStream;
 import java.util.Calendar;
 
@@ -37,6 +34,7 @@ public class AddEditGifticonActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Ui.prepareWindow(this);
         String id = getIntent().getStringExtra("id");
         if (id != null) existing = GifticonDb.get(this).getById(id);
         setTitle(existing == null ? "기프티콘 추가" : "기프티콘 수정");
@@ -46,85 +44,174 @@ public class AddEditGifticonActivity extends Activity {
 
     private View buildUi() {
         ScrollView scroll = new ScrollView(this);
+        scroll.setBackgroundColor(Ui.colorBg());
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 28));
-        root.setBackgroundColor(Ui.colorBg());
+        root.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 30));
         scroll.addView(root);
 
-        TextView heading = Ui.text(this, existing == null ? "새 기프티콘" : "기프티콘 수정", 26, Ui.colorText());
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView back = Ui.actionButton(this, "‹", false);
+        back.setTextSize(25);
+        back.setOnClickListener(v -> finish());
+        LinearLayout.LayoutParams backLp = new LinearLayout.LayoutParams(Ui.dp(this, 46), Ui.dp(this, 44));
+        backLp.rightMargin = Ui.dp(this, 12);
+        header.addView(back, backLp);
+        LinearLayout titleCol = new LinearLayout(this);
+        titleCol.setOrientation(LinearLayout.VERTICAL);
+        TextView heading = Ui.text(this, existing == null ? "새 기프티콘" : "기프티콘 수정", 27, Ui.colorText());
         heading.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
-        root.addView(heading);
+        TextView desc = Ui.text(this, existing == null ? "사진을 고르면 정보를 자동으로 읽어드려요" : "바꿀 내용을 수정한 뒤 저장하세요", 13, Ui.colorSecondary());
+        titleCol.addView(heading);
+        titleCol.addView(desc);
+        header.addView(titleCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        root.addView(header);
 
         image = new ImageView(this);
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        image.setBackground(Ui.rounded(Color.rgb(232,234,240), 18, this));
-        LinearLayout.LayoutParams imageLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 220));
+        image.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 20, this));
+        image.setClipToOutline(true);
+        LinearLayout.LayoutParams imageLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Ui.dp(this, 230));
         imageLp.topMargin = Ui.dp(this, 16);
         root.addView(image, imageLp);
 
-        Button choose = new Button(this); choose.setText("사진에서 기프티콘 선택");
+        Button choose = new Button(this);
+        choose.setText("사진에서 기프티콘 선택");
+        Ui.stylePrimaryButton(choose, this);
         choose.setOnClickListener(v -> pickImage());
-        root.addView(choose);
+        LinearLayout.LayoutParams chooseLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        chooseLp.topMargin = Ui.dp(this, 10);
+        root.addView(choose, chooseLp);
 
-        analyzeStatus = Ui.text(this, "사진을 선택하면 상품명·브랜드·유효기간·바코드를 자동으로 읽습니다.", 12, Ui.colorSecondary());
-        root.addView(analyzeStatus);
+        analyzeStatus = Ui.text(this, "사진을 선택하면 상품명 · 브랜드 · 유효기간 · 바코드를 자동으로 읽어요.", 12, Ui.colorSecondary());
+        analyzeStatus.setPadding(Ui.dp(this, 13), Ui.dp(this, 11), Ui.dp(this, 13), Ui.dp(this, 11));
+        analyzeStatus.setBackground(Ui.rounded(Ui.colorBrandSoft(), 14, this));
+        LinearLayout.LayoutParams analyzeLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        analyzeLp.topMargin = Ui.dp(this, 10);
+        root.addView(analyzeStatus, analyzeLp);
 
-        root.addView(label("상품명"));
-        title = edit("예: 아이스 아메리카노 Tall"); root.addView(title);
-        root.addView(label("브랜드"));
-        brand = edit("예: 스타벅스"); root.addView(brand);
+        LinearLayout infoCard = card("기본 정보");
+        infoCard.addView(label("상품명"));
+        title = edit("예: 아이스 아메리카노 Tall");
+        infoCard.addView(title);
+        infoCard.addView(label("브랜드"));
+        brand = edit("예: 스타벅스");
+        infoCard.addView(brand);
+        addCard(root, infoCard);
 
-        hasExpiry = new Switch(this); hasExpiry.setText("유효기간 있음");
-        root.addView(hasExpiry);
-        dateButton = new Button(this); dateButton.setText("유효기간 선택");
+        LinearLayout expiryCard = card("유효기간과 알림");
+        hasExpiry = new Switch(this);
+        hasExpiry.setText("유효기간 있음");
+        hasExpiry.setTextColor(Ui.colorText());
+        hasExpiry.setTextSize(15);
+        expiryCard.addView(hasExpiry);
+        dateButton = new Button(this);
+        dateButton.setText("유효기간 선택");
+        Ui.styleSecondaryButton(dateButton, this);
         dateButton.setOnClickListener(v -> showDatePicker());
-        root.addView(dateButton);
-        notify = new Switch(this); notify.setText("만료 알림 사용"); notify.setChecked(true);
-        root.addView(notify);
+        LinearLayout.LayoutParams dateLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        dateLp.topMargin = Ui.dp(this, 8);
+        expiryCard.addView(dateButton, dateLp);
+        notify = new Switch(this);
+        notify.setText("만료 알림 사용");
+        notify.setTextColor(Ui.colorText());
+        notify.setTextSize(15);
+        notify.setChecked(true);
+        LinearLayout.LayoutParams notifyLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        notifyLp.topMargin = Ui.dp(this, 8);
+        expiryCard.addView(notify, notifyLp);
         hasExpiry.setOnCheckedChangeListener((b, checked) -> {
             dateButton.setEnabled(checked);
             notify.setEnabled(checked);
             if (checked && selectedExpiry == null) setDefaultExpiry();
         });
-        dateButton.setEnabled(false); notify.setEnabled(false);
+        dateButton.setEnabled(false);
+        notify.setEnabled(false);
+        addCard(root, expiryCard);
 
-        barcodeInfo = Ui.text(this, "바코드/QR: 감지되지 않음", 12, Ui.colorSecondary());
-        LinearLayout.LayoutParams barLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        barLp.topMargin = Ui.dp(this, 10);
-        root.addView(barcodeInfo, barLp);
+        barcodeInfo = Ui.text(this, "바코드/QR · 감지되지 않음", 12, Ui.colorSecondary());
+        barcodeInfo.setPadding(Ui.dp(this, 13), Ui.dp(this, 11), Ui.dp(this, 13), Ui.dp(this, 11));
+        barcodeInfo.setBackground(Ui.rounded(Ui.colorNeutralSoft(), 14, this));
+        LinearLayout.LayoutParams barcodeLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        barcodeLp.topMargin = Ui.dp(this, 14);
+        root.addView(barcodeInfo, barcodeLp);
 
-        root.addView(label("메모"));
+        LinearLayout memoCard = card("메모");
         memo = edit("필요한 메모를 적어두세요");
-        memo.setMinLines(3); memo.setSingleLine(false); root.addView(memo);
+        memo.setMinLines(3);
+        memo.setSingleLine(false);
+        memoCard.addView(memo);
+        addCard(root, memoCard);
 
-        LinearLayout buttons = new LinearLayout(this); buttons.setGravity(Gravity.END);
-        Button cancel = new Button(this); cancel.setText("취소"); cancel.setOnClickListener(v -> finish());
-        saveButton = new Button(this); saveButton.setText("저장"); saveButton.setOnClickListener(v -> save());
-        buttons.addView(cancel); buttons.addView(saveButton);
+        LinearLayout buttons = new LinearLayout(this);
+        Button cancel = new Button(this);
+        cancel.setText("취소");
+        Ui.styleSecondaryButton(cancel, this);
+        cancel.setOnClickListener(v -> finish());
+        saveButton = new Button(this);
+        saveButton.setText("저장");
+        Ui.stylePrimaryButton(saveButton, this);
+        saveButton.setOnClickListener(v -> save());
+        LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        cancelLp.rightMargin = Ui.dp(this, 8);
+        buttons.addView(cancel, cancelLp);
+        buttons.addView(saveButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnLp.topMargin = Ui.dp(this, 16); root.addView(buttons, btnLp);
+        btnLp.topMargin = Ui.dp(this, 16);
+        root.addView(buttons, btnLp);
         return scroll;
     }
 
-    private TextView label(String s) {
-        TextView t = Ui.text(this, s, 13, Ui.colorSecondary());
+    private LinearLayout card(String heading) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
+        Ui.card(box, this);
+        TextView t = Ui.text(this, heading, 17, Ui.colorText());
+        t.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        t.setPadding(0, 0, 0, Ui.dp(this, 8));
+        box.addView(t);
+        return box;
+    }
+
+    private void addCard(LinearLayout root, View card) {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = Ui.dp(this, 14); t.setLayoutParams(lp); return t;
+        lp.topMargin = Ui.dp(this, 14);
+        root.addView(card, lp);
+    }
+
+    private TextView label(String s) {
+        TextView t = Ui.text(this, s, 12, Ui.colorSecondary());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = Ui.dp(this, 8);
+        lp.bottomMargin = Ui.dp(this, 6);
+        t.setLayoutParams(lp);
+        return t;
     }
 
     private EditText edit(String hint) {
-        EditText e = new EditText(this); e.setHint(hint); e.setTextSize(16); e.setBackground(Ui.rounded(Color.WHITE, 10, this));
-        e.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10)); return e;
+        EditText e = new EditText(this);
+        e.setHint(hint);
+        e.setHintTextColor(Ui.colorSecondary());
+        e.setTextColor(Ui.colorText());
+        e.setTextSize(15);
+        e.setBackground(Ui.roundedStroke(Ui.colorSurface(), Ui.colorDivider(), 13, this));
+        e.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+        return e;
     }
 
     private void populate(Gifticon g) {
-        title.setText(g.title); brand.setText(g.brand); memo.setText(g.memo);
+        title.setText(g.title);
+        brand.setText(g.brand);
+        memo.setText(g.memo);
         selectedExpiry = g.expiryDate;
         hasExpiry.setChecked(g.expiryDate != null);
         notify.setChecked(g.notificationsEnabled);
-        analyzedBarcode = g.barcodePayload; analyzedSymbology = g.barcodeSymbology;
-        updateDateButton(); updateBarcodeText();
+        analyzedBarcode = g.barcodePayload;
+        analyzedSymbology = g.barcodeSymbology;
+        updateDateButton();
+        updateBarcodeText();
         if (g.imagePath != null) loadImagePath(g.imagePath);
     }
 
@@ -139,7 +226,9 @@ public class AddEditGifticonActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != PICK_IMAGE || resultCode != RESULT_OK || data == null || data.getData() == null) return;
         selectedImageUri = data.getData();
-        try { getContentResolver().takePersistableUriPermission(selectedImageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
+        try {
+            getContentResolver().takePersistableUriPermission(selectedImageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception ignored) {}
         loadImageUri(selectedImageUri);
         analyzeStatus.setText("이미지 분석 중…");
         saveButton.setEnabled(false);
@@ -153,15 +242,16 @@ public class AddEditGifticonActivity extends Activity {
                         hasExpiry.setChecked(true);
                         updateDateButton();
                     }
-                    analyzedBarcode = a.barcodePayload; analyzedSymbology = a.barcodeSymbology;
+                    analyzedBarcode = a.barcodePayload;
+                    analyzedSymbology = a.barcodeSymbology;
                     updateBarcodeText();
-                    analyzeStatus.setText("자동 인식 완료. 잘못 읽은 값은 저장 전에 수정하세요.");
+                    analyzeStatus.setText("자동 인식 완료 · 잘못 읽은 값은 저장 전에 수정하세요.");
                     saveButton.setEnabled(true);
                 });
             }
             @Override public void onError(Exception e) {
                 runOnUiThread(() -> {
-                    analyzeStatus.setText("자동 인식 실패: 직접 입력해 주세요.");
+                    analyzeStatus.setText("자동 인식에 실패했어요 · 필요한 정보만 직접 입력해 주세요.");
                     saveButton.setEnabled(true);
                 });
             }
@@ -169,7 +259,8 @@ public class AddEditGifticonActivity extends Activity {
     }
 
     private void setDefaultExpiry() {
-        Calendar c = Calendar.getInstance(); c.add(Calendar.MONTH, 1);
+        Calendar c = Calendar.getInstance();
+        c.add(Calendar.MONTH, 1);
         selectedExpiry = DateUtil.endOfDay(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
         updateDateButton();
     }
@@ -178,19 +269,27 @@ public class AddEditGifticonActivity extends Activity {
         Calendar c = Calendar.getInstance();
         if (selectedExpiry != null) c.setTimeInMillis(selectedExpiry);
         new DatePickerDialog(this, (view, y, m, d) -> {
-            selectedExpiry = DateUtil.endOfDay(y, m, d); updateDateButton();
+            selectedExpiry = DateUtil.endOfDay(y, m, d);
+            updateDateButton();
         }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
-    private void updateDateButton() { dateButton.setText(selectedExpiry == null ? "유효기간 선택" : DateUtil.shortDate(selectedExpiry)); }
+    private void updateDateButton() {
+        dateButton.setText(selectedExpiry == null ? "유효기간 선택" : DateUtil.shortDate(selectedExpiry));
+    }
+
     private void updateBarcodeText() {
-        barcodeInfo.setText(analyzedBarcode == null || analyzedBarcode.isEmpty() ? "바코드/QR: 감지되지 않음" :
-                "바코드/QR: " + (analyzedSymbology == null ? "" : analyzedSymbology + " · ") + analyzedBarcode);
+        barcodeInfo.setText(analyzedBarcode == null || analyzedBarcode.isEmpty()
+                ? "바코드/QR · 감지되지 않음"
+                : "바코드/QR · " + (analyzedSymbology == null ? "" : analyzedSymbology + " · ") + analyzedBarcode);
     }
 
     private void save() {
         String t = title.getText().toString().trim();
-        if (t.isEmpty()) { Toast.makeText(this, "상품명을 입력해 주세요.", Toast.LENGTH_SHORT).show(); return; }
+        if (t.isEmpty()) {
+            Toast.makeText(this, "상품명을 입력해 주세요.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Gifticon g = existing == null ? new Gifticon() : existing;
         String oldPath = g.imagePath;
         try {
@@ -216,13 +315,18 @@ public class AddEditGifticonActivity extends Activity {
     }
 
     private void loadImagePath(String path) {
-        BitmapFactory.Options o = new BitmapFactory.Options(); o.inSampleSize = 2;
-        Bitmap b = BitmapFactory.decodeFile(path, o); if (b != null) image.setImageBitmap(b);
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inSampleSize = 2;
+        Bitmap b = BitmapFactory.decodeFile(path, o);
+        if (b != null) image.setImageBitmap(b);
     }
 
     private void loadImageUri(Uri uri) {
         try (InputStream in = getContentResolver().openInputStream(uri)) {
-            Bitmap b = BitmapFactory.decodeStream(in); image.setImageBitmap(b);
-        } catch (Exception ignored) { image.setImageURI(uri); }
+            Bitmap b = BitmapFactory.decodeStream(in);
+            image.setImageBitmap(b);
+        } catch (Exception ignored) {
+            image.setImageURI(uri);
+        }
     }
 }
