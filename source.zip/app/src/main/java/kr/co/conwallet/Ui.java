@@ -36,7 +36,6 @@ public final class Ui {
         t.setText(s);
         t.setTextSize(sp);
         t.setTextColor(color);
-        t.setIncludeFontPadding(false);
         return t;
     }
 
@@ -44,7 +43,6 @@ public final class Ui {
         TextView t = text(c, label, 14, primary ? Color.WHITE : colorText());
         t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         t.setGravity(Gravity.CENTER);
-        t.setMinHeight(dp(c, 44));
         t.setPadding(dp(c, 14), dp(c, 10), dp(c, 14), dp(c, 10));
         t.setBackground(primary
                 ? rounded(colorBrand(), 14, c)
@@ -59,7 +57,6 @@ public final class Ui {
         b.setTextColor(Color.WHITE);
         b.setTextSize(14);
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        b.setMinHeight(dp(c, 48));
         b.setPadding(dp(c, 16), dp(c, 10), dp(c, 16), dp(c, 10));
         b.setBackground(rounded(colorBrand(), 14, c));
     }
@@ -69,7 +66,6 @@ public final class Ui {
         b.setTextColor(colorText());
         b.setTextSize(14);
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        b.setMinHeight(dp(c, 46));
         b.setPadding(dp(c, 14), dp(c, 9), dp(c, 14), dp(c, 9));
         b.setBackground(roundedStroke(colorSurface(), colorDivider(), 14, c));
     }
@@ -79,14 +75,12 @@ public final class Ui {
         b.setTextColor(colorDanger());
         b.setTextSize(14);
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        b.setMinHeight(dp(c, 46));
         b.setPadding(dp(c, 14), dp(c, 9), dp(c, 14), dp(c, 9));
         b.setBackground(rounded(colorDangerSoft(), 14, c));
     }
 
     public static void card(View v, Context c) {
-        v.setBackground(rounded(colorSurface(), 20, c));
-        v.setElevation(dp(c, 1.5f));
+        v.setBackground(roundedStroke(colorSurface(), colorDivider(), 18, c));
     }
 
     public static void prepareWindow(Activity a) {
