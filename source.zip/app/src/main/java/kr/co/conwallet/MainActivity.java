@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -12,6 +13,8 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -20,23 +23,38 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends Activity {
+    private static final String PREF_UI = "main_ui_prefs";
+    private static final String KEY_SORT = "sort_index";
+    private static final String KEY_MANUAL_ORDER = "manual_order_ids";
+
     private GifticonAdapter adapter;
+    private ListView listView;
     private EditText search;
     private TextView statAvailable, statSoon, statTotal, emptyTitle, emptyBody, sortButton;
     private final TextView[] chips = new TextView[5];
+    private final List<Gifticon> displayedItems = new ArrayList<>();
     private int filterIndex = 0;
     private int sortIndex = 0;
+    private boolean dragging = false;
+    private int dragPosition = -1;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Ui.prepareWindow(this);
+        sortIndex = getSharedPreferences(PREF_UI, MODE_PRIVATE).getInt(KEY_SORT, 0);
+        if (sortIndex < 0 || sortIndex > 2) sortIndex = 0;
         setContentView(buildUi());
         requestNotificationPermissionIfNeeded();
     }
@@ -52,8 +70,6 @@ public class MainActivity extends Activity {
         root.setPadding(Ui.dp(this, 18), Ui.dp(this, 24), Ui.dp(this, 18), Ui.dp(this, 8));
         root.setBackgroundColor(Ui.colorBg());
 
-        // Apple의 inset grouped UI처럼 상단을 하나의 부드러운 카드로 묶고,
-        // 텍스트 버튼 대신 아이콘 버튼을 사용해 시각적인 밀도를 낮춥니다.
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(Ui.dp(this, 13), Ui.dp(this, 12), Ui.dp(this, 11), Ui.dp(this, 12));
@@ -121,7 +137,7 @@ public class MainActivity extends Activity {
         search.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
         searchRow.addView(search, new LinearLayout.LayoutParams(0, Ui.dp(this, 50), 1));
 
-        sortButton = Ui.actionButton(this, "정렬", false);
+        sortButton = Ui.actionButton(this, sortLabel(sortIndex), false);
         sortButton.setOnClickListener(v -> showSortDialog());
         LinearLayout.LayoutParams sortLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(this, 50));
         sortLp.leftMargin = Ui.dp(this, 8);
@@ -155,17 +171,17 @@ public class MainActivity extends Activity {
         updateChipStyles();
 
         FrameLayout content = new FrameLayout(this);
-        ListView list = new ListView(this);
-        list.setDivider(null);
-        list.setDividerHeight(Ui.dp(this, 10));
-        list.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 20));
-        list.setClipToPadding(false);
-        list.setSelector(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-        list.setBackgroundColor(Color.TRANSPARENT);
-        list.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        listView = new ListView(this);
+        listView.setDivider(null);
+        listView.setDividerHeight(Ui.dp(this, 10));
+        listView.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 20));
+        listView.setClipToPadding(false);
+        listView.setSelector(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        listView.setBackgroundColor(Color.TRANSPARENT);
+        listView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         adapter = new GifticonAdapter(this);
-        list.setAdapter(adapter);
-        content.addView(list, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        listView.setAdapter(adapter);
+        content.addView(listView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout emptyWrap = new LinearLayout(this);
         emptyWrap.setOrientation(LinearLayout.VERTICAL);
@@ -210,7 +226,7 @@ public class MainActivity extends Activity {
         emptyLp.leftMargin = Ui.dp(this, 4);
         emptyLp.rightMargin = Ui.dp(this, 4);
         content.addView(emptyWrap, emptyLp);
-        list.setEmptyView(emptyWrap);
+        listView.setEmptyView(emptyWrap);
         root.addView(content, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
 
         search.addTextChangedListener(new TextWatcher() {
@@ -218,10 +234,19 @@ public class MainActivity extends Activity {
             public void onTextChanged(CharSequence s, int st, int b, int c) { reload(); }
             public void afterTextChanged(Editable e) {}
         });
-        list.setOnItemClickListener((p, v, pos, id) -> {
+        listView.setOnItemClickListener((p, v, pos, id) -> {
             Gifticon g = adapter.getItem(pos);
             startActivity(new Intent(this, GifticonDetailActivity.class).putExtra("id", g.id));
         });
+        listView.setOnItemLongClickListener((p, v, pos, id) -> {
+            if (sortIndex != 2 || pos < 0 || pos >= displayedItems.size()) return false;
+            dragging = true;
+            dragPosition = pos;
+            v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(true);
+            return true;
+        });
+        listView.setOnTouchListener((v, event) -> handleDragTouch(event));
         return root;
     }
 
@@ -252,15 +277,26 @@ public class MainActivity extends Activity {
         return cell;
     }
 
+    private String sortLabel(int index) {
+        if (index == 1) return "등록순";
+        if (index == 2) return "자유";
+        return "임박순";
+    }
+
     private void showSortDialog() {
-        String[] choices = {"만료 임박순", "최근 등록순", "브랜드순"};
+        String[] choices = {"기한 임박순", "등록순", "자유"};
         new AlertDialog.Builder(this)
-                .setTitle("정렬")
+                .setTitle("정렬 기준")
                 .setSingleChoiceItems(choices, sortIndex, (d, which) -> {
+                    if (which == 2 && sortIndex != 2) seedManualOrderFromCurrent();
                     sortIndex = which;
-                    sortButton.setText(which == 0 ? "임박순" : which == 1 ? "최근순" : "브랜드순");
+                    getSharedPreferences(PREF_UI, MODE_PRIVATE).edit().putInt(KEY_SORT, sortIndex).apply();
+                    sortButton.setText(sortLabel(sortIndex));
                     d.dismiss();
                     reload();
+                    if (sortIndex == 2) {
+                        Toast.makeText(this, "항목을 길게 누른 채 위아래로 움직여 순서를 바꿔보세요.", Toast.LENGTH_SHORT).show();
+                    }
                 })
                 .show();
     }
@@ -309,28 +345,181 @@ public class MainActivity extends Activity {
             }
             if (match) shown.add(g);
         }
-        sortItems(shown);
-        adapter.setItems(shown);
+        sortItems(shown, all);
+        displayedItems.clear();
+        displayedItems.addAll(shown);
+        adapter.setItems(displayedItems);
         statAvailable.setText(String.valueOf(available));
         statSoon.setText(String.valueOf(soon));
         statTotal.setText(String.valueOf(all.size()));
         updateEmptyMessage(q);
     }
 
-    private void sortItems(List<Gifticon> items) {
+    private void sortItems(List<Gifticon> items, List<Gifticon> all) {
         if (sortIndex == 1) {
             Collections.sort(items, (a, b) -> Long.compare(b.createdAt, a.createdAt));
         } else if (sortIndex == 2) {
-            Collections.sort(items, Comparator.comparing(g -> (g.brand == null ? "" : g.brand).toLowerCase(Locale.ROOT)));
+            List<String> order = ensureManualOrder(all);
+            Map<String, Integer> rank = new HashMap<>();
+            for (int i = 0; i < order.size(); i++) rank.put(order.get(i), i);
+            Collections.sort(items, (a, b) -> Integer.compare(
+                    rank.containsKey(a.id) ? rank.get(a.id) : Integer.MAX_VALUE,
+                    rank.containsKey(b.id) ? rank.get(b.id) : Integer.MAX_VALUE
+            ));
         } else {
-            Collections.sort(items, (a, b) -> {
-                if (a.expiryDate == null && b.expiryDate == null) return Long.compare(b.createdAt, a.createdAt);
-                if (a.expiryDate == null) return 1;
-                if (b.expiryDate == null) return -1;
-                int c = Long.compare(a.expiryDate, b.expiryDate);
-                return c != 0 ? c : Long.compare(b.createdAt, a.createdAt);
-            });
+            sortByExpiry(items);
         }
+    }
+
+    private void sortByExpiry(List<Gifticon> items) {
+        Collections.sort(items, (a, b) -> {
+            if (a.expiryDate == null && b.expiryDate == null) return Long.compare(b.createdAt, a.createdAt);
+            if (a.expiryDate == null) return 1;
+            if (b.expiryDate == null) return -1;
+            int c = Long.compare(a.expiryDate, b.expiryDate);
+            return c != 0 ? c : Long.compare(b.createdAt, a.createdAt);
+        });
+    }
+
+    private void seedManualOrderFromCurrent() {
+        SharedPreferences p = getSharedPreferences(PREF_UI, MODE_PRIVATE);
+        String saved = p.getString(KEY_MANUAL_ORDER, "");
+        if (saved != null && !saved.trim().isEmpty()) {
+            ensureManualOrder(GifticonDb.get(this).all());
+            return;
+        }
+
+        List<Gifticon> all = GifticonDb.get(this).all();
+        List<String> ids = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (Gifticon g : displayedItems) {
+            if (g != null && g.id != null && seen.add(g.id)) ids.add(g.id);
+        }
+
+        List<Gifticon> remaining = new ArrayList<>(all);
+        if (sortIndex == 1) {
+            Collections.sort(remaining, (a, b) -> Long.compare(b.createdAt, a.createdAt));
+        } else {
+            sortByExpiry(remaining);
+        }
+        for (Gifticon g : remaining) {
+            if (g != null && g.id != null && seen.add(g.id)) ids.add(g.id);
+        }
+        writeManualOrder(ids);
+    }
+
+    private List<String> ensureManualOrder(List<Gifticon> all) {
+        List<String> saved = readManualOrder();
+        Set<String> valid = new HashSet<>();
+        for (Gifticon g : all) if (g != null && g.id != null) valid.add(g.id);
+
+        List<String> normalized = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (String id : saved) {
+            if (valid.contains(id) && seen.add(id)) normalized.add(id);
+        }
+
+        if (normalized.isEmpty() && !all.isEmpty()) {
+            List<Gifticon> seed = new ArrayList<>(all);
+            sortByExpiry(seed);
+            for (Gifticon g : seed) {
+                if (g.id != null && seen.add(g.id)) normalized.add(g.id);
+            }
+        } else {
+            for (Gifticon g : all) {
+                if (g.id != null && seen.add(g.id)) normalized.add(g.id);
+            }
+        }
+
+        if (!normalized.equals(saved)) writeManualOrder(normalized);
+        return normalized;
+    }
+
+    private List<String> readManualOrder() {
+        String raw = getSharedPreferences(PREF_UI, MODE_PRIVATE).getString(KEY_MANUAL_ORDER, "");
+        List<String> out = new ArrayList<>();
+        if (raw == null || raw.isEmpty()) return out;
+        Set<String> seen = new HashSet<>();
+        String[] parts = raw.split("\\n");
+        for (String part : parts) {
+            String id = part == null ? "" : part.trim();
+            if (!id.isEmpty() && seen.add(id)) out.add(id);
+        }
+        return out;
+    }
+
+    private void writeManualOrder(List<String> ids) {
+        StringBuilder b = new StringBuilder();
+        Set<String> seen = new HashSet<>();
+        for (String id : ids) {
+            if (id == null || id.isEmpty() || !seen.add(id)) continue;
+            if (b.length() > 0) b.append('\n');
+            b.append(id);
+        }
+        getSharedPreferences(PREF_UI, MODE_PRIVATE).edit().putString(KEY_MANUAL_ORDER, b.toString()).apply();
+    }
+
+    private boolean handleDragTouch(MotionEvent event) {
+        if (!dragging || sortIndex != 2 || listView == null) return false;
+
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_MOVE) {
+            int edge = Ui.dp(this, 56);
+            int step = Ui.dp(this, 40);
+            if (event.getY() < edge) {
+                listView.smoothScrollBy(-step, 60);
+            } else if (event.getY() > listView.getHeight() - edge) {
+                listView.smoothScrollBy(step, 60);
+            }
+
+            int target = listView.pointToPosition((int) event.getX(), (int) event.getY());
+            if (target >= 0 && target < displayedItems.size() && target != dragPosition) {
+                int first = listView.getFirstVisiblePosition();
+                View firstView = listView.getChildAt(0);
+                int top = firstView == null ? 0 : firstView.getTop();
+
+                Gifticon moving = displayedItems.remove(dragPosition);
+                displayedItems.add(target, moving);
+                dragPosition = target;
+                adapter.setItems(displayedItems);
+                listView.setSelectionFromTop(first, top);
+                listView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                persistManualOrderFromDisplayed();
+            }
+            return true;
+        }
+
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            persistManualOrderFromDisplayed();
+            dragging = false;
+            dragPosition = -1;
+            if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(false);
+            return true;
+        }
+        return true;
+    }
+
+    private void persistManualOrderFromDisplayed() {
+        List<Gifticon> all = GifticonDb.get(this).all();
+        List<String> base = ensureManualOrder(all);
+        List<String> visibleOrder = new ArrayList<>();
+        Set<String> visibleSet = new HashSet<>();
+        for (Gifticon g : displayedItems) {
+            if (g != null && g.id != null && visibleSet.add(g.id)) visibleOrder.add(g.id);
+        }
+        if (visibleOrder.isEmpty()) return;
+
+        List<String> result = new ArrayList<>();
+        int visibleIndex = 0;
+        for (String id : base) {
+            if (visibleSet.contains(id)) {
+                if (visibleIndex < visibleOrder.size()) result.add(visibleOrder.get(visibleIndex++));
+            } else {
+                result.add(id);
+            }
+        }
+        while (visibleIndex < visibleOrder.size()) result.add(visibleOrder.get(visibleIndex++));
+        writeManualOrder(result);
     }
 
     private void updateEmptyMessage(String q) {
