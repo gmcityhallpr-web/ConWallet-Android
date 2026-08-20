@@ -20,8 +20,8 @@ public final class NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel ch = new NotificationChannel(
-                    CHANNEL_ID, "욱지갑 만료 알림", NotificationManager.IMPORTANCE_DEFAULT);
-            ch.setDescription("욱지갑에 저장한 기프티콘의 유효기간이 가까워지면 알려줍니다.");
+                    CHANNEL_ID, "디지털폐지모으기 만료 알림", NotificationManager.IMPORTANCE_DEFAULT);
+            ch.setDescription("디지털폐지모으기에 저장한 기프티콘의 유효기간이 가까워지면 알려줍니다.");
             nm.createNotificationChannel(ch);
         }
     }
