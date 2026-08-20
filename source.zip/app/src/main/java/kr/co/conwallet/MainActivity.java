@@ -6,6 +6,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -16,6 +18,7 @@ import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
@@ -41,18 +44,36 @@ public class MainActivity extends Activity {
 
     private GifticonAdapter adapter;
     private ListView listView;
+    private FrameLayout contentLayer;
     private EditText search;
     private TextView statAvailable, statSoon, statTotal, emptyTitle, emptyBody, sortButton;
     private final TextView[] chips = new TextView[5];
     private final List<Gifticon> displayedItems = new ArrayList<>();
+
     private int filterIndex = 0;
     private int sortIndex = 0;
+
     private boolean dragging = false;
     private int dragPosition = -1;
+    private String draggingId;
+    private ImageView dragGhost;
+    private float dragFingerOffsetY;
+    private float lastTouchX;
+    private float lastTouchY;
+
+    private int touchSlop;
+    private boolean swiping = false;
+    private float swipeDownX;
+    private float swipeDownY;
+    private float swipeStartTranslation;
+    private int swipePosition = -1;
+    private View swipeRow;
+    private View swipeForeground;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Ui.prepareWindow(this);
+        touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         sortIndex = getSharedPreferences(PREF_UI, MODE_PRIVATE).getInt(KEY_SORT, 0);
         if (sortIndex < 0 || sortIndex > 2) sortIndex = 0;
         setContentView(buildUi());
@@ -170,7 +191,7 @@ public class MainActivity extends Activity {
         root.addView(filterScroll, filterLp);
         updateChipStyles();
 
-        FrameLayout content = new FrameLayout(this);
+        contentLayer = new FrameLayout(this);
         listView = new ListView(this);
         listView.setDivider(null);
         listView.setDividerHeight(Ui.dp(this, 10));
@@ -180,8 +201,9 @@ public class MainActivity extends Activity {
         listView.setBackgroundColor(Color.TRANSPARENT);
         listView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         adapter = new GifticonAdapter(this);
+        adapter.setDeleteListener(this::moveGifticonToTrash);
         listView.setAdapter(adapter);
-        content.addView(listView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        contentLayer.addView(listView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout emptyWrap = new LinearLayout(this);
         emptyWrap.setOrientation(LinearLayout.VERTICAL);
@@ -225,28 +247,41 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams emptyLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         emptyLp.leftMargin = Ui.dp(this, 4);
         emptyLp.rightMargin = Ui.dp(this, 4);
-        content.addView(emptyWrap, emptyLp);
+        contentLayer.addView(emptyWrap, emptyLp);
         listView.setEmptyView(emptyWrap);
-        root.addView(content, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+        root.addView(contentLayer, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
 
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             public void onTextChanged(CharSequence s, int st, int b, int c) { reload(); }
             public void afterTextChanged(Editable e) {}
         });
+
         listView.setOnItemClickListener((p, v, pos, id) -> {
+            if (adapter.getOpenSwipeId() != null) {
+                adapter.closeOpenSwipe();
+                return;
+            }
             Gifticon g = adapter.getItem(pos);
             startActivity(new Intent(this, GifticonDetailActivity.class).putExtra("id", g.id));
         });
+
         listView.setOnItemLongClickListener((p, v, pos, id) -> {
             if (sortIndex != 2 || pos < 0 || pos >= displayedItems.size()) return false;
+            View foreground = adapter.getForeground(v);
+            if (foreground != null) foreground.setTranslationX(0f);
+            adapter.rememberOpenSwipeId(null);
+            swiping = false;
             dragging = true;
             dragPosition = pos;
+            draggingId = displayedItems.get(pos).id;
             v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            startDragGhost(v);
             if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(true);
             return true;
         });
-        listView.setOnTouchListener((v, event) -> handleDragTouch(event));
+
+        listView.setOnTouchListener((v, event) -> handleListTouch(event));
         return root;
     }
 
@@ -318,6 +353,7 @@ public class MainActivity extends Activity {
 
     private void reload() {
         if (adapter == null) return;
+        adapter.rememberOpenSwipeId(null);
         List<Gifticon> all = GifticonDb.get(this).all();
         String q = search == null ? "" : search.getText().toString().trim().toLowerCase(Locale.ROOT);
         List<Gifticon> shown = new ArrayList<>();
@@ -459,11 +495,124 @@ public class MainActivity extends Activity {
         getSharedPreferences(PREF_UI, MODE_PRIVATE).edit().putString(KEY_MANUAL_ORDER, b.toString()).apply();
     }
 
+    private boolean handleListTouch(MotionEvent event) {
+        lastTouchX = event.getX();
+        lastTouchY = event.getY();
+
+        if (dragging) return handleDragTouch(event);
+
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            swiping = false;
+            swipeDownX = event.getX();
+            swipeDownY = event.getY();
+            swipePosition = listView.pointToPosition((int) swipeDownX, (int) swipeDownY);
+            swipeRow = null;
+            swipeForeground = null;
+            swipeStartTranslation = 0f;
+            if (swipePosition >= 0 && swipePosition < adapter.getCount()) {
+                int childIndex = swipePosition - listView.getFirstVisiblePosition();
+                if (childIndex >= 0 && childIndex < listView.getChildCount()) {
+                    swipeRow = listView.getChildAt(childIndex);
+                    swipeForeground = adapter.getForeground(swipeRow);
+                    if (swipeForeground != null) swipeStartTranslation = swipeForeground.getTranslationX();
+                }
+            }
+            return false;
+        }
+
+        if (action == MotionEvent.ACTION_MOVE && swipeForeground != null) {
+            float dx = event.getX() - swipeDownX;
+            float dy = event.getY() - swipeDownY;
+            if (!swiping && Math.abs(dx) > touchSlop && Math.abs(dx) > Math.abs(dy) * 1.15f) {
+                if (dx < 0 || swipeStartTranslation < 0f) {
+                    swiping = true;
+                    closeOtherVisibleSwipes(swipeRow);
+                    if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(true);
+                }
+            }
+            if (swiping) {
+                float width = adapter.getDeleteWidthPx();
+                float tx = swipeStartTranslation + dx;
+                tx = Math.max(-width, Math.min(0f, tx));
+                swipeForeground.setTranslationX(tx);
+                return true;
+            }
+        }
+
+        if ((action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) && swiping && swipeForeground != null) {
+            float width = adapter.getDeleteWidthPx();
+            boolean open = action == MotionEvent.ACTION_UP && swipeForeground.getTranslationX() <= -width * 0.42f;
+            float target = open ? -width : 0f;
+            String id = swipePosition >= 0 && swipePosition < adapter.getCount() ? adapter.getItem(swipePosition).id : null;
+            swipeForeground.animate()
+                    .translationX(target)
+                    .setDuration(150)
+                    .withEndAction(() -> adapter.rememberOpenSwipeId(open ? id : null))
+                    .start();
+            swiping = false;
+            if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(false);
+            return true;
+        }
+
+        if (action == MotionEvent.ACTION_UP && adapter.getOpenSwipeId() != null && swipePosition >= 0 && swipePosition < adapter.getCount()) {
+            Gifticon touched = adapter.getItem(swipePosition);
+            if (touched == null || touched.id == null || !touched.id.equals(adapter.getOpenSwipeId())) {
+                adapter.closeOpenSwipe();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void closeOtherVisibleSwipes(View exceptRow) {
+        if (listView == null || adapter == null) return;
+        adapter.rememberOpenSwipeId(null);
+        for (int i = 0; i < listView.getChildCount(); i++) {
+            View row = listView.getChildAt(i);
+            if (row == exceptRow) continue;
+            View foreground = adapter.getForeground(row);
+            if (foreground != null && foreground.getTranslationX() != 0f) {
+                foreground.animate().translationX(0f).setDuration(120).start();
+            }
+        }
+    }
+
+    private void startDragGhost(View row) {
+        if (row == null || row.getWidth() <= 0 || row.getHeight() <= 0 || contentLayer == null) return;
+        try {
+            Bitmap bitmap = Bitmap.createBitmap(row.getWidth(), row.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            row.draw(canvas);
+
+            dragGhost = new ImageView(this);
+            dragGhost.setImageBitmap(bitmap);
+            dragGhost.setScaleType(ImageView.ScaleType.FIT_XY);
+            dragGhost.setAlpha(0.96f);
+            dragGhost.setElevation(Ui.dp(this, 16));
+            dragGhost.setScaleX(1.015f);
+            dragGhost.setScaleY(1.015f);
+
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(row.getWidth(), row.getHeight());
+            contentLayer.addView(dragGhost, lp);
+            dragGhost.setX(listView.getLeft() + row.getLeft());
+            dragGhost.setY(listView.getTop() + row.getTop());
+            dragFingerOffsetY = lastTouchY - row.getTop();
+            adapter.setDraggedId(draggingId);
+        } catch (Exception ignored) {
+            dragGhost = null;
+        }
+    }
+
     private boolean handleDragTouch(MotionEvent event) {
         if (!dragging || sortIndex != 2 || listView == null) return false;
 
         int action = event.getActionMasked();
         if (action == MotionEvent.ACTION_MOVE) {
+            if (dragGhost != null) {
+                dragGhost.setY(listView.getTop() + event.getY() - dragFingerOffsetY);
+            }
+
             int edge = Ui.dp(this, 56);
             int step = Ui.dp(this, 40);
             if (event.getY() < edge) {
@@ -491,12 +640,23 @@ public class MainActivity extends Activity {
 
         if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
             persistManualOrderFromDisplayed();
+            finishDragGhost();
             dragging = false;
             dragPosition = -1;
+            draggingId = null;
             if (listView.getParent() != null) listView.getParent().requestDisallowInterceptTouchEvent(false);
             return true;
         }
         return true;
+    }
+
+    private void finishDragGhost() {
+        if (dragGhost != null && contentLayer != null) {
+            contentLayer.removeView(dragGhost);
+            dragGhost.setImageDrawable(null);
+            dragGhost = null;
+        }
+        if (adapter != null) adapter.setDraggedId(null);
     }
 
     private void persistManualOrderFromDisplayed() {
@@ -520,6 +680,16 @@ public class MainActivity extends Activity {
         }
         while (visibleIndex < visibleOrder.size()) result.add(visibleOrder.get(visibleIndex++));
         writeManualOrder(result);
+    }
+
+    private void moveGifticonToTrash(Gifticon g) {
+        if (g == null || g.id == null) return;
+        if (dragging) return;
+        adapter.rememberOpenSwipeId(null);
+        NotificationHelper.cancel(this, g.id);
+        GifticonDb.get(this).moveToTrash(g.id);
+        Toast.makeText(this, "휴지통으로 이동했어요.", Toast.LENGTH_SHORT).show();
+        reload();
     }
 
     private void updateEmptyMessage(String q) {
