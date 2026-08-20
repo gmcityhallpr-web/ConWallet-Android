@@ -60,41 +60,92 @@
 
     <LinearLayout
         android:id="@+id/widget_row_1"
-        style="@style/WidgetRow">
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/widget_row_bg">
         <TextView
             android:id="@+id/widget_item_title_1"
-            style="@style/WidgetTitle"
             android:layout_width="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#27272A" />
         <TextView
             android:id="@+id/widget_item_day_1"
-            style="@style/WidgetDay" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#CA141F" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_row_2"
-        style="@style/WidgetRow">
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginTop="7dp"
+        android:background="@drawable/widget_row_bg">
         <TextView
             android:id="@+id/widget_item_title_2"
-            style="@style/WidgetTitle"
             android:layout_width="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#27272A" />
         <TextView
             android:id="@+id/widget_item_day_2"
-            style="@style/WidgetDay" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#CA141F" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_row_3"
-        style="@style/WidgetRow">
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginTop="7dp"
+        android:background="@drawable/widget_row_bg">
         <TextView
             android:id="@+id/widget_item_title_3"
-            style="@style/WidgetTitle"
             android:layout_width="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#27272A" />
         <TextView
             android:id="@+id/widget_item_day_3"
-            style="@style/WidgetDay" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#CA141F" />
     </LinearLayout>
 
 </LinearLayout>
