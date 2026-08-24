@@ -1,0 +1,25 @@
+name: Deploy Home Style to Netlify
+
+on:
+  push:
+    paths:
+      - 'home-style-board/**'
+      - '.github/workflows/deploy-home-style-netlify.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package site
+        run: |
+          cd home-style-board
+          zip -q -r ../home-style.zip .
+      - name: Upload to Netlify
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 3 -X POST \
+            -F "zip=@home-style.zip;type=application/zip" \
+            "https://netlify-mcp.netlify.app/proxy/eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..oCbbfck0kEYUZCzC.NLLuGjeGdIksybsg2kfnVh4Tuo5tS0Cvh-n7btBWcu65YTzDyiG7OvefPw3KHgenLgCG5cUVGvmcKA3KSvG4sHzRU4N8YROwrweZb_K1i8IdZmvoOuq-8Qg74wOjU4YXUy-iatnys_ZtBqKFy6rAro6a7x5wX_P3wQfw-aBApQIU7afTgybrXexLGg2A9LlGsTNZl8JipLROgyYTlaePzHNE6VVwirHyUlG9s5mzlWaYZXYI1y-_bMdMFkRmeGr4JxrRETi34pTC1q8QppwxoufawaSs_R6oF4zo31hUr3H1stDjg3a0AUdllPksny_Kem49eNWohos-Mwu-wgw4PNr7nUYUoxnfNdd-LJMduagUPgWQPD_JsLmhvPdBSiKJQ8jhiTIG.gIrWRbKc60olYtyrJXo8lg/api/v1/sites/9dabdef1-d3c0-4e66-8191-4a8ecbce5df9/builds" \
+            -o netlify-response.json
+          cat netlify-response.json
