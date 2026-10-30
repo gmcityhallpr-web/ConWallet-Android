@@ -38,7 +38,7 @@ chmod +x gradlew
 echo "[4/5] APK 빌드"
 ./gradlew :app:assembleDebug
 
-SRC="app/build/outputs/apk/debug/app-debug.apk"
+SRC="app/build/outputs/apk/debug/wookwallet.apk"
 DEST="ConWallet-Android-debug.apk"
 cp "$SRC" "$DEST"
 
