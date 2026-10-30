@@ -36,13 +36,14 @@
 프로젝트 폴더를 Android Studio로 연 뒤 Gradle Sync가 끝나면:
 
 - Build → Generate Bundle(s) / APK(s) → Generate APK(s)
-- 디버그 APK 경로: `app/build/outputs/apk/debug/app-debug.apk`
+- 디버그 APK 경로: `app/build/outputs/apk/debug/wookwallet.apk`
+- 빌드가 끝나면 `~/Downloads/디지털폐지수집.apk`로도 자동 복사됩니다.
 
 디버그 APK는 자동으로 디버그 키로 서명되어 개인 기기에 직접 설치할 수 있습니다.
 
 ## GitHub Actions
 
-`.github/workflows/build-apk.yml`이 포함되어 있습니다. GitHub 저장소에 올린 뒤 Actions → `Build ConWallet APK` → Run workflow를 누르면 `ConWallet-Android-debug` 아티팩트로 APK가 생성됩니다.
+`.github/workflows/build-apk.yml`이 포함되어 있습니다. GitHub 저장소에 올린 뒤 Actions → `Build 디지털폐지수집 APK` → Run workflow를 누르면 `wookwallet` 아티팩트로 APK가 생성됩니다.
 
 ## iPhone ↔ Android 백업
 
