@@ -1,0 +1,17 @@
+가학산 수목원 개장 (Caption News) — third-party assets
+
+Fonts (SIL Open Font License 1.1; licence texts in fonts/OFL-*.txt)
+- Noto Sans KR (subset via the Google Fonts CSS API) — Google
+- Inter Tight — The Inter Project Authors
+
+Code
+- Ledger card, caption slam, counter and source-tag techniques adapted from the Lemo-Opuscar library's caption-news demo (MIT, github.com/lemomo-ai/lemo-opuscar)
+- Rendering and mastering tools from the same library (MIT)
+
+Picture and sound
+- Graphics only: no footage or photographs.
+- Original score and foley synthesised in mix.py (numpy/scipy). No samples, no voice.
+
+Facts
+- All figures from Gwangmyeong City's announcement as reported 2026-10-28 (see FACTS.md).
+- "초록브리핑 / GREEN BRIEF" is a fictional channel. No logo of the city or the arboretum is used.
