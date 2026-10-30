@@ -1,0 +1,18 @@
+가학산 수목원 개장 (Watercolor) — third-party assets
+
+Fonts (SIL Open Font License 1.1, from github.com/google/fonts, subset to the characters used; licence texts in fonts/OFL-*.txt)
+- Gowun Batang — Yanghee Ryu
+- Nanum Pen Script — Sandoll Communication / NAVER
+- DM Mono — Colophon Foundry
+
+Code
+- Stroke engine (engine.js), plant generators (plants.js) and paper generator (paper.py) adapted from the Lemo-Opuscar library's watercolor demo (MIT, github.com/lemomo-ai/lemo-opuscar)
+- Rendering and mastering tools from the same library (MIT)
+
+Picture and sound
+- Everything is painted in code; the gardens are impressions, not likenesses of the real buildings.
+- Original score and foley synthesised in mix.py (numpy/scipy). No samples, no voice.
+
+Facts
+- Opening date, the five spaces and free admission from Gwangmyeong City's announcement as reported 2026-10-28 (see FACTS.md).
+- No logo of the city or the arboretum is used.
