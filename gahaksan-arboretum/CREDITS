@@ -1,0 +1,17 @@
+가학산 수목원 개장 — third-party assets
+
+Fonts (SIL Open Font License 1.1, from github.com/google/fonts; licence texts in fonts/OFL-*.txt)
+- Black Han Sans — Zess Type
+- Inter Tight — The Inter Project Authors
+- DM Mono — Colophon Foundry
+
+Code
+- engine.js adapted from the Lemo-Opuscar library's pictogram-motion demo engine (MIT, github.com/lemomo-ai/lemo-opuscar)
+- Rendering, mixing helpers and mastering tools from the same library (MIT)
+
+Music and sound
+- Original score and foley, synthesised in mix.py (numpy/scipy). No samples, no voice.
+
+Facts
+- Opening date, theme spaces and free admission from news reports dated 2026-10-28 (see FACTS.md).
+- No official logo of Gwangmyeong City or the arboretum is used; names appear as type only.
