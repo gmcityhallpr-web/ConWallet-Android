@@ -1,6 +1,7 @@
 // 광명 돔구장 유치 서명운동 — Broadcast News Package, campaign promo. 1080×1920, 15.0 s, 120 BPM (beat 0 at 1.5 s).
 // Canvas 2D, deterministic render(t). No narration, no burned-in subtitles (sidecar .srt); one strap from the first graphic to the end card.
-const W = 1080, H = 1920, DUR = 15.0;
+const W = 1080, H = 1920, DUR = 20.0;
+const SH = 4.5;   // the uses card (4.5–9.0) pushes the survey, goal and end card 4.5 s later; those shots keep their own internal clock
 const cv = document.getElementById('out'), ctx = cv.getContext('2d');
 
 const C = {
@@ -56,14 +57,14 @@ function plate(cx, cy, s, glint = -1, drop = 1) {
 }
 const BUG = { x: 905, y: 118, s: .3 };
 function bug(t) {
-  if (t < 1.45 || t >= 10.3) return;
+  if (t < 1.45 || t >= 10.3 + SH) return;
   ctx.globalAlpha = .95; plate(BUG.x, BUG.y, BUG.s, -1, 1);
   text('광명 돔구장', BUG.x - 105, BUG.y + 12, F.k9(30), C.white, 'right', 0, 'bug');
   text('CAMPAIGN', BUG.x - 105, BUG.y + 44, F.mono(16), C.gold, 'right', 3);
   ctx.globalAlpha = 1;
 }
 // Lower-third strap: one headline for the whole lead package; source line under it
-const STRAP = { a: 1.5, b: 10.5, tab: ['서명운동', 'PETITION'], kr: '광명에 5만 석 돔구장을', en: 'BRING A 50,000-SEAT DOME TO GWANGMYEONG' };
+const STRAP = { a: 1.5, b: 10.5 + SH, tab: ['서명운동', 'PETITION'], kr: '광명에 5만 석 돔구장을', en: 'BRING A 50,000-SEAT DOME TO GWANGMYEONG' };
 function strap(t) {
   if (t < STRAP.a - .3 || t >= STRAP.b) return;
   const x0 = 60, ty = 1556, by = 1608, bh = 150, bw = 840;
@@ -79,7 +80,7 @@ function strap(t) {
   ctx.fillStyle = C.lemon; ctx.fillRect(x0, ty, tabW, by - ty);
   const w1 = text(STRAP.tab[0], x0 + 20, ty + 40, F.k9(32), C.ink); text(STRAP.tab[1], x0 + 20 + w1 + 14, ty + 40, F.b8(32), C.ink, 'left', 2);
   ctx.globalAlpha = .78;
-  text('SOURCE: GWANGMYEONG CITY · 2026.10.26', 1020, 1812, F.mono(18), C.gold, 'right', 1.5);
+  text('SOURCE: GWANGMYEONG CITY · 2026.10', 1020, 1812, F.mono(18), C.gold, 'right', 1.5);
   text('출처 광명시 발표', 1020, 1846, F.k7(22), C.gold, 'right');
   ctx.globalAlpha = 1; ctx.restore();
 }
@@ -166,6 +167,38 @@ function shotSpec(t) {
   ctx.globalAlpha = 1;
   if (t >= 1.95) TX.push({ id: 'seatsn', text: '50,000석', x0: 56, y0: 1030, x1: 900, y1: 1250 });
 }
+// 4.5–9.0: what the dome is for — the city's own plan (K-pop, arts, sports, ICT); panels rise, then light in turn
+const USES = [['K팝 공연', 'K-POP CONCERTS', 'mic'], ['예술 공연', 'ARTS & SHOWS', 'note'], ['스포츠', 'SPORTS', 'ball'], ['ICT 결합', 'TECH & ICT', 'chip']];
+function icon(kind, x, y, r, col) {
+  ctx.save(); ctx.translate(x, y); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = r * .12; ctx.lineCap = 'round';
+  if (kind === 'mic') { ctx.beginPath(); ctx.ellipse(0, -r * .35, r * .32, r * .45, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(0, -r * .3, r * .55, .15 * Math.PI, .85 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, r * .25); ctx.lineTo(0, r * .7); ctx.moveTo(-r * .3, r * .7); ctx.lineTo(r * .3, r * .7); ctx.stroke(); }
+  if (kind === 'note') { ctx.beginPath(); ctx.ellipse(-r * .38, r * .45, r * .26, r * .2, -.4, 0, 7); ctx.ellipse(r * .42, r * .3, r * .26, r * .2, -.4, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(-r * .14, r * .45); ctx.lineTo(-r * .14, -r * .6); ctx.lineTo(r * .66, -r * .78); ctx.lineTo(r * .66, r * .3); ctx.stroke(); }
+  if (kind === 'ball') { ctx.beginPath(); ctx.arc(0, 0, r * .7, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(-r * 1.0, 0, r * .62, -.55, .55); ctx.stroke(); ctx.beginPath(); ctx.arc(r * 1.0, 0, r * .62, Math.PI - .55, Math.PI + .55); ctx.stroke(); }
+  if (kind === 'chip') { ctx.strokeRect(-r * .45, -r * .45, r * .9, r * .9); ctx.fillRect(-r * .2, -r * .2, r * .4, r * .4); for (let i = -1; i <= 1; i++) { const p = i * r * .25; [[p, -r * .45, p, -r * .7], [p, r * .45, p, r * .7], [-r * .45, p, -r * .7, p], [r * .45, p, r * .7, p]].forEach(([a, b, c, d]) => { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); }); } }
+  ctx.restore();
+}
+function shotUses(t) {
+  studioBg(t);
+  eyebrow('광명시 구상 · 2026.10.07', t, 4.5);
+  push(seg(t, 4.55, 4.85), 60, 470, 130, () => text('무엇을 하나요?', 56, 470, F.k9(124), C.white, 'left', 0, 'uses'));
+  push(seg(t, 4.65, 4.95), 60, 540, 50, () => text('WHAT THE DOME IS FOR', 62, 540, F.b6(40), C.lemon, 'left', 3, 'uses-en'));
+  const PW = 470, PH = 400;
+  USES.forEach(([kr, en, ic], i) => {
+    const x = 60 + (i % 2) * (PW + 20), y0 = 620 + Math.floor(i / 2) * (PH + 20), t0 = 4.55 + i * .1, k = eo(seg(t, t0, t0 + .28)), y = y0 + (1 - k) * 220;
+    const lit = 5.3 + i * .7, on = t >= lit, kf = 1 - seg(t, lit, lit + .3);
+    ctx.save(); ctx.globalAlpha = clamp(k * 1.5);
+    ctx.fillStyle = on ? 'rgba(242,207,29,.10)' : C.ink2; ctx.fillRect(x, y, PW, PH);
+    if (on) { ctx.strokeStyle = `rgba(242,207,29,${.55 + .45 * kf})`; ctx.lineWidth = 6; ctx.strokeRect(x + 3, y + 3, PW - 6, PH - 6); }
+    text(String(i + 1), x + 26, y + 52, F.b8(40), C.lemon);
+    icon(ic, x + PW / 2, y + 150, 80, on ? C.lemon : C.grey2);
+    const fk = F.k9(56), wk = tw(kr, fk);
+    if (on) { ctx.fillStyle = C.lemon; ctx.fillRect(x + PW / 2 - wk / 2 - 18, y + 252, (wk + 36) * eo(seg(t, lit, lit + .12)), 76); }
+    text(kr, x + PW / 2, y + 310, fk, on ? C.ink : C.white, 'center');
+    text(en, x + PW / 2, y + 368, F.b8(28), C.grey2, 'center', 2);
+    ctx.restore();
+    if (k > 0) { TX.push({ id: 'use' + i, text: kr, x0: x, y0: y0 + 250, x1: x + PW, y1: y0 + 330 }); TX.push({ id: 'usee' + i, text: en, x0: x, y0: y0 + 340, x1: x + PW, y1: y0 + 376 }); }
+  });
+}
 // 4.5–7.5: survey — responses vs in favour on one scale, then the badge
 function shotSurvey(t) {
   studioBg(t);
@@ -200,12 +233,12 @@ function shotGoal(t) {
   text('서명 목표', 64, 520, F.k9(64), C.white, 'left', 0, 'g1'); text('SIGNATURE GOAL', 64 + tw('서명 목표', F.k9(64)) + 20, 516, F.b8(32), C.grey2, 'left', 2);
   text('마감', 64, 940, F.k9(64), C.white, 'left', 0, 'g2'); text('DEADLINE', 64 + tw('마감', F.k9(64)) + 20, 936, F.b8(32), C.grey2, 'left', 2);
   ctx.globalAlpha = 1;
-  const goal = ['1', '0', ',', '0', '0', '0'], date = ['1', '1', '.', '0', '6'];
+  const goal = ['1', '0', ',', '0', '0', '0'], date = ['1', '1', '.', '0', '8'];
   const tile = (arr, y, t0, w, h) => arr.forEach((d, i) => flipTile(64 + i * (w + 12), y, w, h, '0', d, t0 + i * .06, t, F.b8(h * .78), C.lemon));
   tile(goal, 560, 7.6, 132, 200);
   text('명', 64 + 6 * 144 + 6, 730, F.k9(80), C.white);
   tile(date, 980, 8.0, 150, 200);
-  if (t >= 7.6) { TX.push({ id: 'goaln', text: '10,000명', x0: 64, y0: 560, x1: 1000, y1: 760 }); TX.push({ id: 'daten', text: '11.06', x0: 64, y0: 980, x1: 860, y1: 1180 }); }
+  if (t >= 7.6) { TX.push({ id: 'goaln', text: '10,000명', x0: 64, y0: 560, x1: 1000, y1: 760 }); TX.push({ id: 'daten', text: '11.08', x0: 64, y0: 980, x1: 860, y1: 1180 }); }
   stamp(t, 7.55, 700, 1390, '문체부 전달', 'TO THE MINISTRY');
 }
 // 10.5–15: end card — call to action with the QR code
@@ -227,7 +260,7 @@ function shotEnd(t) {
   }
   ctx.globalAlpha = m(10.7, 10.95); text('naver.me/IIDyvaSU', 540, 1290, F.mono(44), C.white, 'center', 2, 'url'); ctx.globalAlpha = 1;
   const dk = m(10.7, 10.95);
-  if (dk > 0) { ctx.globalAlpha = dk; const dw = tw('11월 6일까지', F.k9(70)) + 60; ctx.fillStyle = C.lemon; ctx.fillRect(540 - dw / 2, 1360, dw * dk, 110); text('11월 6일까지', 540, 1440, F.k9(70), C.ink, 'center', 0, 'until'); ctx.globalAlpha = 1; }
+  if (dk > 0) { ctx.globalAlpha = dk; const dw = tw('11월 8일까지', F.k9(70)) + 60; ctx.fillStyle = C.lemon; ctx.fillRect(540 - dw / 2, 1360, dw * dk, 110); text('11월 8일까지', 540, 1440, F.k9(70), C.ink, 'center', 0, 'until'); ctx.globalAlpha = 1; }
   ctx.globalAlpha = m(10.8, 11.05);
   text('행정복지센터·도서관 서명부', 540, 1580, F.k7(46), C.white, 'center', 0, 'offline');
   text('OR AT COMMUNITY CENTRES', 540, 1630, F.b6(30), C.grey2, 'center', 3, 'offline-en');
@@ -246,13 +279,14 @@ function wipe(t, a, b, oldFn, newFn) {
   const OLD = TX.splice(n0); TX.push(...(seg(t, a, b) < .5 ? OLD : NEW));
   wipeBand(bx);
 }
-const END = t => shotEnd(t + .2);   // the end card's entry starts under the slanted wipe
-const SCENES = [[1.5, shotSpec], [4.5, shotSurvey], [7.5, shotGoal], [10.55, END]];
+const SURVEY = t => shotSurvey(t - SH), GOAL = t => shotGoal(t - SH);
+const END = t => shotEnd(t - SH + .2);   // the end card's entry starts under the slanted wipe
+const SCENES = [[1.5, shotSpec], [4.5, shotUses], [4.5 + SH, SURVEY], [7.5 + SH, GOAL], [10.55 + SH, END]];
 function scene(t) {
   if (t < 1.5) { if (t >= 1.2) wipe(t, 1.2, 1.5, shotSting, shotSpec); else layer(shotSting, t, t); stingLogo(t); return; }
-  if (t >= 10.3 && t < 10.55) {   // slanted wipe into the end card (its content already moving); the strap leaves with the old picture
-    layer(shotGoal, t, t);
-    const k = eio(seg(t, 10.3, 10.55)), x = W - k * (W + 600);
+  if (t >= 10.3 + SH && t < 10.55 + SH) {   // slanted wipe into the end card (its content already moving); the strap leaves with the old picture
+    layer(GOAL, t, t);
+    const k = eio(seg(t, 10.3 + SH, 10.55 + SH)), x = W - k * (W + 600);
     ctx.save(); ctx.beginPath(); ctx.moveTo(x + 600, 0); ctx.lineTo(W + 600, 0); ctx.lineTo(W + 600, H); ctx.lineTo(x, H); ctx.closePath(); ctx.clip(); TX = []; END(t); ctx.restore();
     ctx.fillStyle = C.lemon; ctx.beginPath(); ctx.moveTo(x + 600, 0); ctx.lineTo(x + 640, 0); ctx.lineTo(x + 40, H); ctx.lineTo(x, H); ctx.fill();
     return;
@@ -265,12 +299,16 @@ function render(t) {
   scene(t); bug(t);
 }
 
-const EV = [
+const EV0 = [
   { t: 0.04, type: 'whoosh' }, { t: 0.16, type: 'sting' }, { t: 1.2, type: 'whoosh' },
   { t: 1.5, type: 'strap' }, { t: 2.0, type: 'rattle', d: .6 }, { t: 2.6, type: 'glock', n: 0 },
   { t: 4.5, type: 'timp' }, { t: 4.7, type: 'rattle', d: .45 }, { t: 4.95, type: 'rattle', d: .45 }, { t: 5.15, type: 'glock', n: 1 }, { t: 5.4, type: 'glock', n: 2 }, { t: 5.3, type: 'pop' },
   { t: 7.5, type: 'timp' }, ...[...Array(6).keys()].map(i => ({ t: 7.6 + i * .06, type: 'flap' })), ...[...Array(5).keys()].map(i => ({ t: 8.0 + i * .06, type: 'flap' })),
   { t: 7.55, type: 'stamp' }, { t: 10.0, type: 'stop' }, { t: 10.3, type: 'whoosh' }, { t: 10.5, type: 'end' }, { t: 10.6, type: 'pop' },
+];
+// events from the survey on move with their shots; the uses card adds its own
+const EV = [...EV0.map(e => e.t >= 4.5 ? { ...e, t: e.t + SH } : e),
+  { t: 4.5, type: 'timp' }, { t: 4.55, type: 'rise' }, ...[0, 1, 2, 3].map(i => ({ t: 5.3 + i * .7, type: 'light', i })),
 ].sort((a, b) => a.t - b.t);
 
 window.DUR = DUR; window.EV = EV;

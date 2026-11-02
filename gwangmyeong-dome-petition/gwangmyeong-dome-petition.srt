@@ -8,16 +8,21 @@
 A 50,000-seat sports and concert dome for Gwangmyeong
 
 3
-00:00:04,500 --> 00:00:07,500
+00:00:04,500 --> 00:00:09,000
+K팝 공연 · 예술 공연 · 스포츠 · ICT 결합
+K-pop concerts, arts and shows, sports, tech and ICT
+
+4
+00:00:09,000 --> 00:00:12,000
 시민 설문 6,830명 중 5,620명 찬성 (82%)
 5,620 of 6,830 citizens surveyed in favour (82%)
 
-4
-00:00:07,500 --> 00:00:10,300
-11월 6일까지 시민 1만 명 서명 · 문체부 전달
-Goal: 10,000 signatures by Nov 6, to the Ministry
-
 5
-00:00:10,500 --> 00:00:15,000
+00:00:12,000 --> 00:00:14,800
+11월 8일까지 시민 1만 명 서명 · 문체부 전달
+Goal: 10,000 signatures by Nov 8, to the Ministry
+
+6
+00:00:15,050 --> 00:00:20,000
 지금 서명하기 naver.me/IIDyvaSU · 행정복지센터·도서관 서명부
 Sign now online or at community centres and libraries

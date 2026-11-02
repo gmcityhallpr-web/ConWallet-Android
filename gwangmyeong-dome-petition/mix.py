@@ -1,5 +1,5 @@
 """News theme + package foley, placed from events.json. 120 BPM, beat 0 at 1.5 s. D minor theme under the package;
-one beat of silence (10.0–10.5) before the end card, then an F-major lift held to the end. Synthesised; no voice."""
+one beat of silence (14.5–15.0) before the end card, then an F-major lift held to the end. Synthesised; no voice."""
 import json, os, sys
 import numpy as np
 import soundfile as sf
@@ -64,8 +64,8 @@ DM = [(38, [62, 65, 69]), (34, [58, 62, 65]), (36, [60, 64, 67]), (33, [57, 61, 
 FM = [(41, [65, 69, 72]), (36, [64, 67, 72]), (38, [62, 65, 69]), (34, [62, 65, 70])]  # F C Dm Bb
 for b in range(int((DUR - B0) / BEAT)):
     t = B0 + b * BEAT
-    if 10.0 <= t < 10.5: continue
-    end = t >= 10.5; bar = b // 4; bib = b % 4
+    if 14.5 <= t < 15.0: continue
+    end = t >= 15.0; bar = b // 4; bib = b % 4
     root, ch = (FM if end else DM)[bar % 4]
     if not end or bib == 0: put(music, kick(), t, .7)
     if bib in (1, 3) and not end: put(music, snare(), t, .3, .1)
@@ -85,6 +85,8 @@ for e in EV:
     elif ty == 'glock': put(music, glock([81, 84, 86][e['n']]), t, .16, -.2 + .2 * e['n'])
     elif ty == 'timp': put(music, timp(55), t, .55)
     elif ty == 'pop': put(fx, pop(), t, .2)
+    elif ty == 'rise': [put(fx, pop(), t + i * .1, .16, -.3 + .2 * i) for i in range(4)]
+    elif ty == 'light': put(music, glock([74, 77, 81, 86][e['i']]), t, .16, -.3 + .2 * e['i'])
     elif ty == 'flap': put(fx, click(), t, .3, .3); put(fx, click(), t + .02, .15, .3)
     elif ty == 'stamp': put(fx, thump(), t, .55); put(fx, lp(click(), 2000), t + .03, .3)
     elif ty == 'end': put(music, tutti([53, 60, 65, 69, 72], 2.5), t, .38); put(music, timp(43.6), t, .6); put(music, cymbal(2.5), t, .14); [put(music, glock(m, 2), t + .3 + .12 * i, .12) for i, m in enumerate([77, 81, 84])]
