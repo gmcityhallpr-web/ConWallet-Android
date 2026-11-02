@@ -1,8 +1,27 @@
 [
-  {"t0": 0.5, "t1": 1.5, "text": "광명 돔구장 유치 캠페인"},
-  {"t0": 1.5, "t1": 4.5, "text": "광명에 5만 석 스포츠·공연 복합형 돔구장을\nA 50,000-seat sports and concert dome for Gwangmyeong"},
-  {"t0": 4.5, "t1": 9.0, "text": "K팝 공연 · 예술 공연 · 스포츠 · ICT 결합\nK-pop concerts, arts and shows, sports, tech and ICT"},
-  {"t0": 9.0, "t1": 12.0, "text": "시민 설문 6,830명 중 5,620명 찬성 (82%)\n5,620 of 6,830 citizens surveyed in favour (82%)"},
-  {"t0": 12.0, "t1": 14.8, "text": "11월 8일까지 시민 1만 명 서명 · 문체부 전달\nGoal: 10,000 signatures by Nov 8, to the Ministry"},
-  {"t0": 15.05, "t1": 20.0, "text": "지금 서명하기 naver.me/IIDyvaSU · 행정복지센터·도서관 서명부\nSign now online or at community centres and libraries"}
+ {
+  "t0": 1.6,
+  "t1": 4.29,
+  "text": "광명에 5만 석 복합 돔구장을!\nA 50,000-seat multi-use dome for Gwangmyeong!"
+ },
+ {
+  "t0": 4.5,
+  "t1": 9.1,
+  "text": "K팝, 예술 공연, 스포츠, ICT까지 한곳에서.\nK-pop, arts, sports and ICT, all in one place."
+ },
+ {
+  "t0": 9.1,
+  "t1": 12.1,
+  "text": "시민 10명 중 8명이 찬성했습니다.\n8 in 10 citizens surveyed are in favour."
+ },
+ {
+  "t0": 12.1,
+  "t1": 14.76,
+  "text": "서명은 11월 8일까지입니다.\nSign by November 8."
+ },
+ {
+  "t0": 15.2,
+  "t1": 18.0,
+  "text": "지금 QR코드로 서명해 주세요.\nScan the QR code and sign now."
+ }
 ]

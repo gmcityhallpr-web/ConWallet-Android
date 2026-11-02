@@ -1,13 +1,14 @@
-# Narration — to be added in a session that can reach speech.platform.bing.com
+# Narration
 
-The 20 s cut in `../gwangmyeong-dome-petition.mp4` has no voice yet: the build environment it was made in blocked the
-Microsoft neural voice service that `core/tts/tts_zh.py` (edge-tts) uses. `lines.json` holds the script, one line per shot,
+Generated with `tts_proxy.py` (runs the library's `core/tts/tts_zh.py` through the environment's HTTPS proxy and CA bundle,
+which edge-tts does not pick up by itself); WAVs in `out/`, mixed by `../mix.py`. Needs speech.platform.bing.com.
+Speech-to-text hears "돔구장" as "동구장" in every phrasing tried, including "돔 경기장" alone — most likely a Whisper bias; listen to line n1. `lines.json` holds the script, one line per shot,
 with `start` (seconds in the film), `voice`, `rate`, `text` (subtitles) and `say` (what is spoken: numbers spelled out).
 
 Note: edge-tts uses Microsoft Edge's read-aloud service. Its terms for official city publicity are unclear; a recorded voice
 or a licensed TTS (Naver Clova Voice, Azure Speech with a key) is the safer choice for a final public release.
 
-Steps in the new session (LIB = the Lemo-Opuscar library, ffmpeg 7+):
+Steps (as done) (LIB = the Lemo-Opuscar library, ffmpeg 7+):
 1. `"$LIB/.venv/bin/python" "$LIB/core/tts/tts_zh.py" lines.json out/` — one WAV per line + `dur.json` (tts_zh.py reads `voice`, `rate`, `say`).
 2. Check each line fits before the next `start` (shot cuts at 4.5, 9.0, 12.0, 15.05); raise `rate` (≤ +15%) or trim words if not.
 3. Speech-to-text check: `"$LIB/.venv/bin/python" "$LIB/core/tts/asr_check.py" lines.json out/ --lang auto`.

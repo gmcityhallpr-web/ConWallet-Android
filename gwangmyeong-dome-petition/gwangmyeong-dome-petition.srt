@@ -1,28 +1,24 @@
 1
-00:00:00,500 --> 00:00:01,500
-광명 돔구장 유치 캠페인
+00:00:01,600 --> 00:00:04,290
+광명에 5만 석 복합 돔구장을!
+A 50,000-seat multi-use dome for Gwangmyeong!
 
 2
-00:00:01,500 --> 00:00:04,500
-광명에 5만 석 스포츠·공연 복합형 돔구장을
-A 50,000-seat sports and concert dome for Gwangmyeong
+00:00:04,500 --> 00:00:09,100
+K팝, 예술 공연, 스포츠, ICT까지 한곳에서.
+K-pop, arts, sports and ICT, all in one place.
 
 3
-00:00:04,500 --> 00:00:09,000
-K팝 공연 · 예술 공연 · 스포츠 · ICT 결합
-K-pop concerts, arts and shows, sports, tech and ICT
+00:00:09,100 --> 00:00:12,100
+시민 10명 중 8명이 찬성했습니다.
+8 in 10 citizens surveyed are in favour.
 
 4
-00:00:09,000 --> 00:00:12,000
-시민 설문 6,830명 중 5,620명 찬성 (82%)
-5,620 of 6,830 citizens surveyed in favour (82%)
+00:00:12,100 --> 00:00:14,760
+서명은 11월 8일까지입니다.
+Sign by November 8.
 
 5
-00:00:12,000 --> 00:00:14,800
-11월 8일까지 시민 1만 명 서명 · 문체부 전달
-Goal: 10,000 signatures by Nov 8, to the Ministry
-
-6
-00:00:15,050 --> 00:00:20,000
-지금 서명하기 naver.me/IIDyvaSU · 행정복지센터·도서관 서명부
-Sign now online or at community centres and libraries
+00:00:15,200 --> 00:00:18,000
+지금 QR코드로 서명해 주세요.
+Scan the QR code and sign now.

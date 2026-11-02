@@ -12,7 +12,8 @@ Code
 
 Picture and sound
 - Graphics only, drawn in code. No footage, photos or logos.
-- Original score and foley synthesised in mix.py (numpy/scipy). No samples, no voice.
+- Original score and foley synthesised in mix.py (numpy/scipy). No samples.
+- Narration: Microsoft neural voice ko-KR-SunHiNeural via edge-tts (Edge read-aloud service). Its terms for official publicity are unclear; replace with a recorded or licensed voice for a final public release.
 
 Facts
 - All figures from Gwangmyeong City's announcements as reported 2026-10-26 (see FACTS.md).

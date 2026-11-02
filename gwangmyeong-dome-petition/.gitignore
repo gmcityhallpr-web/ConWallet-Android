@@ -1,3 +1,4 @@
 out/
 stills/
 .pylib/
+narration/out/.cache/

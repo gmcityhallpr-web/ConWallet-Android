@@ -1,6 +1,6 @@
 # 광명 돔구장 유치 서명운동 — Broadcast News Package treatment
 
-Style: Broadcast News Package · 20.0 s · 1080×1920 (9:16 short-form) · 30 fps · no narration (the online Korean voice is blocked here; the package graphics and the score carry it) · Korean labels, English second lines · subtitles as a separate `.srt`.
+Style: Broadcast News Package · 20.0 s · 1080×1920 (9:16 short-form) · 30 fps · Korean narration (ko-KR-SunHiNeural, one line per shot, added in v3) · Korean labels, English second lines · subtitles as a separate `.srt`.
 
 **Brand.** This is the city's campaign promo, not a newscast, so the brand plate is the campaign itself — **광명 돔구장 / GWANGMYEONG DOME** with a `CAMPAIGN` dateline — not a fictional broadcaster. No city logo (none supplied). Accent lemon / gold / paper / ink as in the style; the breaking colour is never used.
 

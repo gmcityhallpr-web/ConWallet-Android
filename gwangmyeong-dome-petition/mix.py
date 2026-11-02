@@ -91,8 +91,27 @@ for e in EV:
     elif ty == 'stamp': put(fx, thump(), t, .55); put(fx, lp(click(), 2000), t + .03, .3)
     elif ty == 'end': put(music, tutti([53, 60, 65, 69, 72], 2.5), t, .38); put(music, timp(43.6), t, .6); put(music, cymbal(2.5), t, .14); [put(music, glock(m, 2), t + .3 + .12 * i, .12) for i, m in enumerate([77, 81, 84])]
 
+# ───────── narration: one line per shot (narration/lines.json), HP 90 Hz + 3:1; music ducked ≈ −7 dB and its 1.2–5 kHz thinned under speech ─────────
+import soxr  # noqa: E402
+NAR = os.path.join(HERE, 'narration')
+voice = np.zeros(N); speech = np.zeros(N)
+for ln in json.load(open(os.path.join(NAR, 'lines.json'))):
+    x, sr = sf.read(os.path.join(NAR, 'out', ln['id'] + '.wav'))
+    if x.ndim > 1: x = x.mean(1)
+    x = soxr.resample(x, sr, SR); x = compress(hp(x, 90), thr=.2, ratio=3.0)
+    x = x / (np.sqrt((x ** 2).mean()) + 1e-9) * .1
+    i = int(ln['start'] * SR); x = x[:N - i]; voice[i:i + len(x)] += x; speech[i:i + len(x)] = 1
+k = int(.08 * SR); env = np.convolve(speech, np.ones(k) / k, 'same')            # smoothed speech envelope
+duck = 1 - env * (1 - 10 ** (-7 / 20))
+for c in range(2):
+    band = bp(music[:, c], 1200, 5000)
+    music[:, c] = (music[:, c] - band * env * .5) * duck
+# voice ≈ 8 dB over the music while it speaks
+mrms = np.sqrt((music[speech > 0] ** 2).mean()) if speech.any() else .05
+voice *= mrms * 10 ** (8 / 20) / (np.sqrt((voice[speech > 0] ** 2).mean()) + 1e-9)
+
 # ───────── master ─────────
-mix = music + fx
+mix = music + fx + voice[:, None]
 for c in range(2): mix[:, c] = compress(mix[:, c], thr=.18, ratio=3.0)
 mix *= np.minimum(1, (N - np.arange(N)) / (.4 * SR))[:, None]
 mix *= 10 ** (-15.5 / 20) / np.sqrt((mix ** 2).mean())
