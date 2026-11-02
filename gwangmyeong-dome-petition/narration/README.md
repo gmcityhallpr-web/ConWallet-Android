@@ -14,3 +14,13 @@ Steps (as done) (LIB = the Lemo-Opuscar library, ffmpeg 7+):
 3. Speech-to-text check: `"$LIB/.venv/bin/python" "$LIB/core/tts/asr_check.py" lines.json out/ --lang auto`.
 4. In `../mix.py`: high-pass 90 Hz and compress 3:1 the voice, place each WAV at its `start`, duck the music ≈ −7 dB under speech
    (and thin 1.2–5 kHz), then master as before; rebuild the `.srt` from `text` + start/duration.
+
+## Switching to NAVER CLOVA Voice (licensed)
+
+`clova_tts.py` writes the same `out/<id>.wav` + `out/dur.json` from `lines.json` with a CLOVA Voice Premium speaker.
+Set `NCP_CLIENT_ID` / `NCP_CLIENT_SECRET` in the environment, then:
+
+    "$LIB/.venv/bin/python" clova_tts.py lines.json out/ --speaker nara --speed -1
+
+Check every line still ends before its shot cuts (4.5, 9.0, 12.0, 14.9), run `../mix.py`, re-mux, and update the
+narration credit in `../CREDITS` (voice: NAVER CLOVA Voice, speaker name, under the NCP account's terms).
