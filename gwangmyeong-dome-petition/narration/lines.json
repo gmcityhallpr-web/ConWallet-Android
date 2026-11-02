@@ -1,0 +1,7 @@
+[
+  {"id": "n1", "start": 1.6, "voice": "ko-KR-SunHiNeural", "rate": "+5%", "text": "광명에 5만 석 규모, 스포츠·공연 복합 돔구장을!", "say": "광명에 오만 석 규모, 스포츠 공연 복합 돔구장을!"},
+  {"id": "n2", "start": 4.6, "voice": "ko-KR-SunHiNeural", "rate": "+5%", "text": "K팝과 예술 공연, 스포츠, 그리고 ICT까지 한곳에서.", "say": "케이팝과 예술 공연, 스포츠, 그리고 아이씨티까지 한곳에서."},
+  {"id": "n3", "start": 9.1, "voice": "ko-KR-SunHiNeural", "rate": "+5%", "text": "시민 10명 중 8명이 찬성했습니다.", "say": "시민 열 명 중 여덟 명이 찬성했습니다."},
+  {"id": "n4", "start": 12.1, "voice": "ko-KR-SunHiNeural", "rate": "+5%", "text": "서명은 11월 8일까지, 목표는 1만 명입니다.", "say": "서명은 십일월 팔일까지, 목표는 만 명입니다."},
+  {"id": "n5", "start": 15.2, "voice": "ko-KR-SunHiNeural", "rate": "+0%", "text": "지금 QR코드로 서명해 주세요.", "say": "지금 큐알코드로 서명해 주세요."}
+]
