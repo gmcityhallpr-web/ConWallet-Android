@@ -1,0 +1,24 @@
+name: Deploy Sync Fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-sync-fix.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package site
+        run: |
+          cd home-style-board
+          zip -q -r ../home-style.zip .
+      - name: Upload to Netlify
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --retry 3 -X POST \
+            -F "zip=@home-style.zip;type=application/zip" \
+            "https://netlify-mcp.netlify.app/proxy/eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..NK6pLtjHurRE8Gq6.IdQWCA7fRd5gzZqfoh-QZQ6SVWN_2OnHyoFo0HMLTUEBDVmJ-YgjTnqcKO4E-vOjSbwbQ6S_2eUtjl2j7E0lYE0zNFQzM1Ubv12RXwq-ttY6X5DD_eXyFKp-uhUcdX95OEU0_caHE-KOmnjyp24lNeU1IXuWmI773LSTWgJnlmidL5mVzYkXgjLuGZwExhIrdo3AR1H7vgrL4na8digITyQmfmkxx9xvH3Zegtj78t_hq51vV1N7sEb5VN9EZK5c-lvvNxQ5rO6Li-M9O33RAolUkT2Merpw3hxgRfCnU6vfthjOEuWy7EFscZrjGwMr1LKXdLDudzRxpGx0yje5u9sCRAdczgk7ENPU-tU_lAvx98UX7Ax9SrnO4H6reHLwqX8Mt0lb.-7jAqMDYTelRv2rrSjr6gg/api/v1/sites/9dabdef1-d3c0-4e66-8191-4a8ecbce5df9/builds/api/v1/sites/9dabdef1-d3c0-4e66-8191-4a8ecbce5df9/builds" \
+            -o netlify-response.json
+          cat netlify-response.json
